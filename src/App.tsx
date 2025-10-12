@@ -10,7 +10,7 @@ import DeliveryRequests from './pages/DeliveryRequests';
 import Admins from './pages/Admins';
 import Employees from './pages/Employees';
 import Freelancers from './pages/Freelancers';
-import Teams from './Teams';
+import Teams from './pages/Teams';
 import Requests from './pages/Requests';
 import FreelancerHours from './pages/FreelancerHours';
 import Vehicles from './pages/Vehicles';
