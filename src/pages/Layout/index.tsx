@@ -8,9 +8,12 @@ function Layout(): JSX.Element {
     <>
         <Navbar bg="dark" data-bs-theme="dark">
             <Container>
-                <Navbar.Brand as={Link} to="/">Navbar</Navbar.Brand>
+                <Navbar.Brand as={Link} to="/">Logo</Navbar.Brand>
                 <Nav className="me-auto">
                     <Nav.Link as={Link} to="/">Home</Nav.Link>
+                    <Nav.Link as={Link} to="/cadastrar">Cadastrar</Nav.Link>
+                    <Nav.Link as={Link} to="/pedidos-mudanca">Pedidos de Mundança</Nav.Link>
+                    <Nav.Link as={Link} to="/premiacoes">Premiações</Nav.Link>
                 </Nav>
                 <Nav>
                     <Dropdown drop="down-centered">
