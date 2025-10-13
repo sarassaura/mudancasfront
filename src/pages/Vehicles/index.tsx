@@ -13,7 +13,7 @@ function Vehicles(): JSX.Element {
             <Form.Label>Nome</Form.Label>
             <InputGroup>
               <InputGroup.Text>
-                <i className="bi bi-person-fill"></i>
+                <i className="bi bi-car-front-fill"></i>
               </InputGroup.Text>
               <Form.Control placeholder="Digite o nome do Veículo" />
             </InputGroup>
