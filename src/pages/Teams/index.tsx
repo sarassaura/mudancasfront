@@ -13,7 +13,7 @@ function Teams(): JSX.Element {
           <Form.Label>Nome</Form.Label>
           <InputGroup>
             <InputGroup.Text>
-              <i className="bi bi-person-fill"></i>
+              <i className="bi bi-people-fill"></i>
             </InputGroup.Text>
             <Form.Control placeholder="Digite o nome da Equipe" />
           </InputGroup>
