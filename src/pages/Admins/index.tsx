@@ -6,6 +6,7 @@ import { showError } from "../../components/ToastAlerts/ShowError";
 import type { DadosAdmin } from "../../types";
 
 function Admins(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [formData, setFormData] = useState<DadosAdmin>({
     nome: "",
@@ -34,7 +35,7 @@ function Admins(): JSX.Element {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/admins", {
+      const response = await fetch(`${API_BASE_URL}/admins`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

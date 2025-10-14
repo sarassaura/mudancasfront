@@ -6,6 +6,7 @@ import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosVeiculo } from "../../types";
 
 function Vehicles(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<DadosVeiculo>({
@@ -33,7 +34,7 @@ function Vehicles(): JSX.Element {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/veiculos", {
+      const response = await fetch(`${API_BASE_URL}/veiculos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

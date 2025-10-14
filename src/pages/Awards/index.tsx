@@ -116,6 +116,7 @@ const filterAndAggregateData = (
 }
 
 function Awards(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const contentRef = useRef<HTMLDivElement>(null)
   const [rawData, setRawData] = useState<Premiacoes[]>([]);
   const [allSortedData, setAllSortedData] = useState<AwardEntry[]>([]);
@@ -169,7 +170,7 @@ function Awards(): JSX.Element {
 
   useEffect(() => {
     setLoading(true);
-    fetch("http://localhost:5000/api/data") 
+    fetch(`${API_BASE_URL}/data`) 
       .then(response => response.json())
       .then((data: Premiacoes[]) => {
         setRawData(data);
