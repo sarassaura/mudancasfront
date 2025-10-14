@@ -21,6 +21,12 @@ interface Pedidos {
 function DeliveryRequests(): JSX.Element {
   const [pedidos, setPedidos] = useState<Pedidos[]>([]);
   const navigate = useNavigate();
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+  ];
+  const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/pedidos")
@@ -68,8 +74,13 @@ function DeliveryRequests(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-day"></i> 
               </InputGroup.Text>
-              <Form.Select>
-                <option>Dia</option>
+              <Form.Select defaultValue="">
+                <option value="">Dia</option>
+                  {days.map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
               </Form.Select>
             </InputGroup>
 
@@ -77,17 +88,27 @@ function DeliveryRequests(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-month"></i>
               </InputGroup.Text>
-              <Form.Select>
-                < option>Mês</option>
+              <Form.Select defaultValue="">
+                <option value="">Mês</option>
+                  {months.map((month, index) => (
+                <option key={month} value={index + 1}>
+                  {month}
+                </option>
+              ))}
               </Form.Select>
             </InputGroup>
 
-            <InputGroup style={{ width: '120px' }}>
+            <InputGroup style={{ width: '130px' }}>
               <InputGroup.Text>
                 <i className="bi bi-calendar-date"></i>
               </InputGroup.Text>
-              <Form.Select>
-                <option>Ano</option>
+              <Form.Select defaultValue="">
+                <option value="">Ano</option>
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
               </Form.Select>
             </InputGroup>
           </div>

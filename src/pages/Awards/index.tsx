@@ -22,6 +22,48 @@ const awardData: AwardEntry[] = [
 
 function Awards(): JSX.Element {
   const navigate = useNavigate();
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+  ];
+  const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof AwardEntry; order: "asc" | "desc" }>({
+    key: "hoursWorked",
+    order: "asc",
+  });
+  const [sortedData, setSortedData] = useState(awardData);
+
+  const handleSort = (column: keyof AwardEntry) => {
+    const isSameColumn = sortConfig.key === column;
+    const newOrder = isSameColumn && sortConfig.order === "asc" ? "desc" : "asc";
+
+    const sorted = [...sortedData].sort((a, b) => {
+      const getValue = (val: string | number) =>
+        parseInt(String(val).replace(/\D/g, "")) || 0;
+      const aValue = getValue(a[column]);
+      const bValue = getValue(b[column]);
+      return newOrder === "asc" ? aValue - bValue : bValue - aValue;
+    });
+
+    setSortedData(sorted);
+    setSortConfig({ key: column, order: newOrder });
+  };
+
+  const renderSortIcon = (column: keyof AwardEntry) => {
+    const isActive = sortConfig.key === column || (sortConfig.key === "hoursWorked" && column === "hoursWorked");
+    const iconVisibility = isActive ? "visible" : "hidden";
+
+    return (
+      <i
+        className={`bi bi-arrow-${sortConfig.order === "asc" ? "down" : "up"} ms-1`}
+        style={{
+          visibility: iconVisibility,
+          width: "16px",
+        }}
+      ></i>
+    );
+  };
 
   return (
     <div className="mx-auto d-flex flex-column">
@@ -63,8 +105,13 @@ function Awards(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-day"></i> 
               </InputGroup.Text>
-              <Form.Select>
-                <option>Dia</option>
+              <Form.Select defaultValue="">
+                <option value="">Dia</option>
+                  {days.map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
               </Form.Select>
             </InputGroup>
 
@@ -72,17 +119,27 @@ function Awards(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-month"></i>
               </InputGroup.Text>
-              <Form.Select>
-                < option>Mês</option>
+              <Form.Select defaultValue="">
+                <option value="">Mês</option>
+                  {months.map((month, index) => (
+                <option key={month} value={index + 1}>
+                  {month}
+                </option>
+              ))}
               </Form.Select>
             </InputGroup>
 
-            <InputGroup style={{ width: '120px' }}>
+            <InputGroup style={{ width: '130px' }}>
               <InputGroup.Text>
                 <i className="bi bi-calendar-date"></i>
               </InputGroup.Text>
-              <Form.Select>
-                <option>Ano</option>
+              <Form.Select defaultValue="">
+                <option value="">Ano</option>
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
               </Form.Select>
             </InputGroup>
           </div>
@@ -93,15 +150,27 @@ function Awards(): JSX.Element {
             <tr>
               <th>#</th>
               <th>Nome</th>
-              <th style={{ cursor: 'pointer' }}> 
-                Horas Trabalhadas <i className="bi bi-arrow-up"></i>
+              <th style={{ cursor: 'pointer' }} onClick={() => handleSort("hoursWorked")}> 
+                Horas Trabalhadas 
+                {renderSortIcon("hoursWorked")}
               </th>
-              <th>Horas Extras</th>
-              <th>Pernoites</th>
+              <th
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("extraHours")}>
+                  Horas Extras
+                  {renderSortIcon("extraHours")}
+                </th>
+              <th
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("overnights")}
+              >
+                Pernoites
+                {renderSortIcon("overnights")}
+              </th>
             </tr>
           </thead>
           <tbody>
-            {awardData.map((award, index) => (
+            {sortedData.map((award, index) => (
               <tr key={award.id}>
                 <td className="fw-bold">{index + 1}</td>
                 <td>{award.name}</td>
