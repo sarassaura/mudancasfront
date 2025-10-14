@@ -1,7 +1,8 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import RequestCard from "../../components/Card";
 import { Form, InputGroup, Pagination } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import html2pdf from 'html2pdf.js'; 
 
 interface Pedidos {
   "_id": string,
@@ -79,8 +80,9 @@ const filterPedidos = (
 };
 
 function DeliveryRequests(): JSX.Element {
+  const contentRef = useRef<HTMLDivElement>(null)
   const [rawData, setRawData] = useState<Pedidos[]>([]);
-  const [filteredPedidos, setFilteredPedidos] = useState<Pedidos[]>([]);
+  const [allFilteredPedidos, setAllFilteredPedidos] = useState<Pedidos[]>([]);
   const [selectedDay, setSelectedDay] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
@@ -104,7 +106,7 @@ useEffect(() => {
     setRawData(data);
 
     const initialFiltered = filterPedidos(data, selectedDay, selectedMonth, selectedYear);
-    setFilteredPedidos(initialFiltered);
+    setAllFilteredPedidos(initialFiltered);
     setCurrentPage(1);
     setLoading(false);
   })
@@ -117,13 +119,39 @@ useEffect(() => {
 useEffect(() => {
   const newFiltered = filterPedidos(rawData, selectedDay, selectedMonth, selectedYear);
   
-  setFilteredPedidos(newFiltered);
+  setAllFilteredPedidos(newFiltered);
   setCurrentPage(1); 
 }, [rawData, selectedDay, selectedMonth, selectedYear]);
 
+const handleExportPDF = () => {
+  const element = contentRef.current;
+  if (!element) return;
+  
+  const opt = {
+    margin: 0,
+    filename: 'pedidos_filtrados.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      scroll: 0, 
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight + 10,
+    },
+    jsPDF: { 
+      unit: 'mm', 
+      format: 'a4', 
+      orientation: 'landscape' 
+    },
+    pagebreak: { mode: 'avoid-all' }
+  };
+
+  html2pdf().set(opt).from(element).save();
+};
+
+const paginatedPedidos = allFilteredPedidos;
 const startIndex = (currentPage - 1) * itemsPerPage;
-const currentData = filteredPedidos.slice(startIndex, startIndex + itemsPerPage);
-const totalPages = Math.ceil(filteredPedidos.length / itemsPerPage);
+const currentData = paginatedPedidos.slice(startIndex, startIndex + itemsPerPage);
+const totalPages = Math.ceil(paginatedPedidos.length / itemsPerPage);
 
 const renderPaginationItems = () => {
   const items = [];
@@ -149,7 +177,7 @@ if (loading)
   );
 
   return (
-    <div className="container-fluid  mx-auto d-flex flex-column">
+    <div className="container-fluid  mx-auto d-flex flex-column" ref={contentRef}>
       <div className="d-flex justify-content-between p-4 mb-3">
         <button 
           onClick={() => navigate('/')}
@@ -166,6 +194,7 @@ if (loading)
           Voltar
         </button>
         <button
+          onClick={handleExportPDF} 
           style={{
             border: 'none', 
             backgroundColor: 'transparent', 
