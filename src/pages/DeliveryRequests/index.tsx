@@ -18,8 +18,76 @@ interface Pedidos {
   descricao?: string,
 }
 
+const parseDateToLocal = (dateString: string): Date | null => {
+    let yyyy_mm_dd: string;
+    
+    if (dateString.includes('/')) {
+      const parts = dateString.split('/');
+      const d = parts[0].padStart(2, '0');
+      const m = parts[1].padStart(2, '0');
+      const y = parts[2];
+      yyyy_mm_dd = `${y}-${m}-${d}`;
+    } else {
+      yyyy_mm_dd = dateString;
+    }
+    
+    const date = new Date(`${yyyy_mm_dd}T12:00:00`); 
+    
+    return isNaN(date.getTime()) ? null : date;
+}
+
+const filterPedidos = (
+  data: Pedidos[],
+  day: string,
+  month: string,
+  year: string
+): Pedidos[] => {
+    
+  let filteredData = data;
+
+  if (day || month || year) {
+    filteredData = data.filter(entry => {
+      const entryDate = parseDateToLocal(entry.data_entrega);
+      if (!entryDate) return false;
+      
+      const entryDay = entryDate.getDate().toString();
+      const entryMonth = (entryDate.getMonth() + 1).toString(); 
+      const entryYear = entryDate.getFullYear().toString();
+
+      const dayMatch = !day || entryDay === day;
+      const monthMatch = !month || entryMonth === month;
+      const yearMatch = !year || entryYear === year;
+
+      return dayMatch && monthMatch && yearMatch;
+    });
+  }
+
+  if (!day && !month && !year) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setHours(0, 0, 0, 0); 
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    filteredData = data.filter(entry => {
+      const entryDate = parseDateToLocal(entry.data_entrega);
+      if (!entryDate) return false;
+
+      return entryDate >= thirtyDaysAgo;
+    });
+  }
+
+  return filteredData;
+};
+
 function DeliveryRequests(): JSX.Element {
-  const [pedidos, setPedidos] = useState<Pedidos[]>([]);
+  const [rawData, setRawData] = useState<Pedidos[]>([]);
+  const [filteredPedidos, setFilteredPedidos] = useState<Pedidos[]>([]);
+  const [selectedDay, setSelectedDay] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; 
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = [
@@ -28,14 +96,60 @@ function DeliveryRequests(): JSX.Element {
   ];
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/pedidos")
-    .then(response => response.json())
-    .then(data => setPedidos(data));
-  }, []);
+useEffect(() => {
+  setLoading(true);
+  fetch("http://localhost:5000/api/pedidos")
+  .then(response => response.json())
+  .then((data: Pedidos[]) => {
+    setRawData(data);
+
+    const initialFiltered = filterPedidos(data, selectedDay, selectedMonth, selectedYear);
+    setFilteredPedidos(initialFiltered);
+    setCurrentPage(1);
+    setLoading(false);
+  })
+  .catch((err) => {
+      console.error("Erro ao buscar pedidos:", err);
+      setLoading(false);
+  });
+}, [selectedDay, selectedMonth, selectedYear]);
+
+useEffect(() => {
+  const newFiltered = filterPedidos(rawData, selectedDay, selectedMonth, selectedYear);
   
+  setFilteredPedidos(newFiltered);
+  setCurrentPage(1); 
+}, [rawData, selectedDay, selectedMonth, selectedYear]);
+
+const startIndex = (currentPage - 1) * itemsPerPage;
+const currentData = filteredPedidos.slice(startIndex, startIndex + itemsPerPage);
+const totalPages = Math.ceil(filteredPedidos.length / itemsPerPage);
+
+const renderPaginationItems = () => {
+  const items = [];
+  for (let number = 1; number <= totalPages; number++) {
+    items.push(
+      <Pagination.Item 
+        key={number} 
+        active={number === currentPage} 
+        onClick={() => setCurrentPage(number)}
+      >
+        {number}
+      </Pagination.Item>
+    );
+  }
+  return items;
+};
+
+if (loading)
   return (
-    <div className="mx-auto d-flex flex-column container-fluid">
+    <div className="text-center p-5">
+      <h2 className="text-primary">Carregando pedidos...</h2>
+    </div>
+  );
+
+  return (
+    <div className="container-fluid  mx-auto d-flex flex-column">
       <div className="d-flex justify-content-between p-4 mb-3">
         <button 
           onClick={() => navigate('/')}
@@ -66,7 +180,7 @@ function DeliveryRequests(): JSX.Element {
         </button>
       </div>
 
-      <div className="px-3">
+      <div className="mx-auto px-0" style={{ width: '1110px' }}>
         <h1 className="h1 fw-bold text-primary text-center mb-4">Pedidos de Mudança</h1>
         <div className="d-flex justify-content-end mb-4">
           <div className="d-flex gap-3">
@@ -74,7 +188,8 @@ function DeliveryRequests(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-day"></i> 
               </InputGroup.Text>
-              <Form.Select defaultValue="">
+              <Form.Select value={selectedDay} 
+                onChange={(e) => setSelectedDay(e.target.value)}>
                 <option value="">Dia</option>
                   {days.map((day) => (
                 <option key={day} value={day}>
@@ -88,7 +203,8 @@ function DeliveryRequests(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-month"></i>
               </InputGroup.Text>
-              <Form.Select defaultValue="">
+              <Form.Select value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(e.target.value)}>
                 <option value="">Mês</option>
                   {months.map((month, index) => (
                 <option key={month} value={index + 1}>
@@ -102,7 +218,8 @@ function DeliveryRequests(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-date"></i>
               </InputGroup.Text>
-              <Form.Select defaultValue="">
+              <Form.Select value={selectedYear} 
+                onChange={(e) => setSelectedYear(e.target.value)}>
                 <option value="">Ano</option>
                 {years.map((year) => (
                   <option key={year} value={year}>
@@ -115,25 +232,30 @@ function DeliveryRequests(): JSX.Element {
         </div>
         
         <div className="d-flex flex-wrap justify-content-center gap-4 mb-5">
-          {pedidos.map((pedido) => (
-            <RequestCard 
-              team={pedido.equipe.nome}
-              startDate={pedido.data_entrega}
-              endDate={pedido.data_retirada}
-              vehicle={pedido.veiculo.nome}
-              description={pedido.descricao ?? ''}
-            />
-          ))}
+            {currentData.map((pedido) => (
+              <RequestCard 
+                key={pedido._id}
+                team={pedido.equipe.nome}
+                startDate={pedido.data_entrega}
+                endDate={pedido.data_retirada}
+                vehicle={pedido.veiculo.nome}
+                description={pedido.descricao ?? ''}
+              />
+            ))
+          }
         </div>
 
         <div className="d-flex justify-content-center mb-5">
           <Pagination size="lg"> 
-            <Pagination.Prev>Prev</Pagination.Prev>
-            <Pagination.Item active>{1}</Pagination.Item>
-            <Pagination.Item>{2}</Pagination.Item>
-            <Pagination.Item>{3}</Pagination.Item>
-            <Pagination.Item>{4}</Pagination.Item>
-            <Pagination.Next>Next</Pagination.Next>
+            <Pagination.Prev
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            />
+            {renderPaginationItems()}
+            <Pagination.Next
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            />
           </Pagination>
         </div>
       </div>
