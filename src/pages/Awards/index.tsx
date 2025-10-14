@@ -2,25 +2,128 @@ import { useEffect, useState, type JSX } from "react";
 import { Form, InputGroup, Pagination, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
-interface AwardEntry {
-  id: number;
-  name: string;
-  hoursWorked: string;
-  extraHours: string;
-  overnights: string;
+interface Premiacoes {
+  _id: string;
+  data: string;
+  hora: string;
+  autonomo: {
+    _id: string;
+    nome: string;
+  },
+  pernoite: boolean;
 }
 
-const awardData: AwardEntry[] = [
-  { id: 1, name: "Vadson Souza", hoursWorked: "300h", extraHours: "100h", overnights: "2 dias" },
-  { id: 2, name: "Elton Alves", hoursWorked: "280h", extraHours: "80h", overnights: "5 dias" },
-  { id: 3, name: "Mateus Silva", hoursWorked: "250h", extraHours: "50h", overnights: "3 dias" },
-  { id: 4, name: "Vadson Souza", hoursWorked: "300h", extraHours: "100h", overnights: "2 dias" },
-  { id: 5, name: "Elton Alves", hoursWorked: "280h", extraHours: "80h", overnights: "5 dias" },
-  { id: 6, name: "Mateus Silva", hoursWorked: "250h", extraHours: "50h", overnights: "3 dias" },
-];
+interface AwardEntry {
+  id: string;
+  name: string;
+  hoursWorked: number;
+  extraHours: number;
+  overnights: number;
+}
 
+const jornadaNormalHoras = 150;
+
+const parseDateToLocal = (dateString: string): Date | null => {
+      let yyyy_mm_dd: string;
+      
+      if (dateString.includes('/')) {
+        const parts = dateString.split('/');
+        const d = parts[0].padStart(2, '0');
+        const m = parts[1].padStart(2, '0');
+        const y = parts[2];
+        yyyy_mm_dd = `${y}-${m}-${d}`;
+    } else {
+        yyyy_mm_dd = dateString;
+    }
+      const date = new Date(`${yyyy_mm_dd}T12:00:00`); 
+
+      return isNaN(date.getTime()) ? null : date;
+  }
+
+const aggregateAwardsData = (data: Premiacoes[]): AwardEntry[] => {
+  const aggregated: { [autonomoId: string]: AwardEntry } = {};
+
+  data.forEach((entry) => {
+    const autonomoId = entry.autonomo._id;
+    const hours = parseInt(entry.hora, 10) || 0;
+
+    if (!aggregated[autonomoId]) {
+      aggregated[autonomoId] = {
+        id: autonomoId,
+        name: entry.autonomo.nome,
+        hoursWorked: 0,
+        extraHours: 0,
+        overnights: 0,
+      };
+    }
+
+    aggregated[autonomoId].hoursWorked += hours;
+    
+    if (entry.pernoite) {
+      aggregated[autonomoId].overnights += 1;
+    }
+  });
+
+  return Object.values(aggregated).map((entry) => {
+    const hoursWorked = entry.hoursWorked;
+    const extraHours = Math.max(0, hoursWorked - jornadaNormalHoras);
+
+    return {
+      ...entry,
+      extraHours: extraHours,
+    };
+  });
+};
+
+const filterAndAggregateData = (
+  data: Premiacoes[],
+  day: string,
+  month: string,
+  year: string
+): AwardEntry[] => {
+
+  let filteredData = data;
+
+  if (day || month || year) {
+    filteredData = data.filter(entry => {
+      const entryDate = parseDateToLocal(entry.data);
+      if (!entryDate) return false;
+      
+      const entryDay = entryDate.getDate().toString();
+      const entryMonth = (entryDate.getMonth() + 1).toString(); 
+      const entryYear = entryDate.getFullYear().toString();
+
+      const dayMatch = !day || entryDay === day;
+      const monthMatch = !month || entryMonth === month;
+      const yearMatch = !year || entryYear === year;
+
+      return dayMatch && monthMatch && yearMatch;
+    });
+  }
+
+  if (!day && !month && !year) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    filteredData = data.filter(entry => {
+      const entryDate = new Date(entry.data.split('/').reverse().join('-'));
+      return !isNaN(entryDate.getTime()) && entryDate >= thirtyDaysAgo;
+    });
+  }
+  
+  return aggregateAwardsData(filteredData);
+}
 
 function Awards(): JSX.Element {
+  const [rawData, setRawData] = useState<Premiacoes[]>([]);
+  const [sortedData, setSortedData] = useState<AwardEntry[]>([]);
+  const [selectedDay, setSelectedDay] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = [
@@ -28,42 +131,115 @@ function Awards(): JSX.Element {
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
   ];
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
+  
   const [sortConfig, setSortConfig] = useState<{ key: keyof AwardEntry; order: "asc" | "desc" }>({
     key: "hoursWorked",
     order: "asc",
   });
-  const [sortedData, setSortedData] = useState(awardData);
+
+  const sortData = (dataToSort: AwardEntry[], key: keyof AwardEntry, order: "asc" | "desc"): AwardEntry[] => {
+    return [...dataToSort].sort((a, b) => {
+      if (key === 'hoursWorked' || key === 'extraHours' || key === 'overnights') {
+        const aValue = a[key];
+        const bValue = b[key];
+        return order === "asc" ? aValue - bValue : bValue - aValue;
+      }
+      if (key === 'name') {
+        const aValue = String(a[key]).toLowerCase();
+        const bValue = String(b[key]).toLowerCase();
+        if (aValue < bValue) return order === "asc" ? -1 : 1;
+        if (aValue > bValue) return order === "asc" ? 1 : -1;
+        return 0;
+      }
+      return 0;
+    });
+  };
 
   const handleSort = (column: keyof AwardEntry) => {
     const isSameColumn = sortConfig.key === column;
     const newOrder = isSameColumn && sortConfig.order === "asc" ? "desc" : "asc";
 
-    const sorted = [...sortedData].sort((a, b) => {
-      const getValue = (val: string | number) =>
-        parseInt(String(val).replace(/\D/g, "")) || 0;
-      const aValue = getValue(a[column]);
-      const bValue = getValue(b[column]);
-      return newOrder === "asc" ? aValue - bValue : bValue - aValue;
-    });
+    const sorted = sortData(sortedData, column, newOrder);
 
     setSortedData(sorted);
     setSortConfig({ key: column, order: newOrder });
   };
 
+  useEffect(() => {
+    setLoading(true);
+    fetch("http://localhost:5000/api/data") 
+      .then(response => response.json())
+      .then((data: Premiacoes[]) => {
+        setRawData(data);
+
+        const aggregated = filterAndAggregateData(data, selectedDay, selectedMonth, selectedYear);
+
+        const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
+
+        setSortedData(sorted);
+        setCurrentPage(1);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Erro ao buscar premiações:", err);
+        setLoading(false);
+      });
+  }, [selectedDay, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    if (rawData.length > 0) {
+      const aggregated = filterAndAggregateData(rawData, selectedDay, selectedMonth, selectedYear);
+      
+      const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
+      
+      setSortedData(sorted);
+      setCurrentPage(1);
+    }
+  }, [selectedDay, selectedMonth, selectedYear, rawData]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+
+  const renderPaginationItems = () => {
+    const items = [];
+    for (let number = 1; number <= totalPages; number++) {
+      items.push(
+        <Pagination.Item 
+          key={number} 
+          active={number === currentPage} 
+          onClick={() => setCurrentPage(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+    return items;
+  };
+
   const renderSortIcon = (column: keyof AwardEntry) => {
-    const isActive = sortConfig.key === column || (sortConfig.key === "hoursWorked" && column === "hoursWorked");
+    const isActive = sortConfig.key === column;
+    const icon = sortConfig.order === "asc" ? "down" : "up";
     const iconVisibility = isActive ? "visible" : "hidden";
 
     return (
       <i
-        className={`bi bi-arrow-${sortConfig.order === "asc" ? "down" : "up"} ms-1`}
+        className={`bi bi-arrow-${icon} ms-1`}
         style={{
           visibility: iconVisibility,
-          width: "16px",
+          display: 'inline-block',
+          width: '16px',
         }}
       ></i>
     );
   };
+
+  if (loading)
+    return (
+      <div className="text-center p-5">
+        <h2 className="text-primary">Carregando premiações...</h2>
+      </div>
+    );
 
   return (
     <div className="mx-auto d-flex flex-column">
@@ -105,7 +281,7 @@ function Awards(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-day"></i> 
               </InputGroup.Text>
-              <Form.Select defaultValue="">
+              <Form.Select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)}>
                 <option value="">Dia</option>
                   {days.map((day) => (
                 <option key={day} value={day}>
@@ -119,7 +295,7 @@ function Awards(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-month"></i>
               </InputGroup.Text>
-              <Form.Select defaultValue="">
+              <Form.Select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
                 <option value="">Mês</option>
                   {months.map((month, index) => (
                 <option key={month} value={index + 1}>
@@ -133,7 +309,7 @@ function Awards(): JSX.Element {
               <InputGroup.Text>
                 <i className="bi bi-calendar-date"></i>
               </InputGroup.Text>
-              <Form.Select defaultValue="">
+              <Form.Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
                 <option value="">Ano</option>
                 {years.map((year) => (
                   <option key={year} value={year}>
@@ -149,7 +325,10 @@ function Awards(): JSX.Element {
           <thead>
             <tr>
               <th>#</th>
-              <th>Nome</th>
+              <th style={{ cursor: 'pointer' }} onClick={() => handleSort("name")}>
+                Nome
+                {renderSortIcon("name")}
+              </th>
               <th style={{ cursor: 'pointer' }} onClick={() => handleSort("hoursWorked")}> 
                 Horas Trabalhadas 
                 {renderSortIcon("hoursWorked")}
@@ -170,13 +349,13 @@ function Awards(): JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {sortedData.map((award, index) => (
-              <tr key={award.id}>
-                <td className="fw-bold">{index + 1}</td>
-                <td>{award.name}</td>
-                <td>{award.hoursWorked}</td>
-                <td>{award.extraHours}</td>
-                <td>{award.overnights}</td>
+            {currentData.map((entry, index) => (
+              <tr key={entry.id}>
+                <td className="fw-bold">{startIndex + index + 1}</td>
+                <td>{entry.name}</td>
+                <td>{entry.hoursWorked}</td>
+                <td>{entry.extraHours}</td>
+                <td>{entry.overnights}</td>
               </tr>
             ))}
           </tbody>
@@ -184,12 +363,15 @@ function Awards(): JSX.Element {
 
         <div className="d-flex justify-content-center mb-5">
           <Pagination size="lg"> 
-            <Pagination.Prev>Prev</Pagination.Prev>
-            <Pagination.Item active>{1}</Pagination.Item>
-            <Pagination.Item>{2}</Pagination.Item>
-            <Pagination.Item>{3}</Pagination.Item>
-            <Pagination.Item>{4}</Pagination.Item>
-            <Pagination.Next>Next</Pagination.Next>
+            <Pagination.Prev
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            />
+            {renderPaginationItems()}
+            <Pagination.Next
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            />
           </Pagination>
         </div>
       </div>

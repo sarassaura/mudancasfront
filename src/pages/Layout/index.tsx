@@ -1,10 +1,15 @@
-import type { JSX } from "react";
+import { useContext, type JSX } from "react";
 import { Container, Dropdown, Nav, Navbar } from "react-bootstrap";
 import { Outlet } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import Logo from '../../assets/Logo.svg';
+import UserContext from "../../context/user";
 
 function Layout(): JSX.Element {
+  const { setUser } = useContext(UserContext)!;
+  const signOut = () => {
+    setUser(null);
+  }
   return (
     <>
         <Navbar bg="light" data-bs-theme="dark">
@@ -30,7 +35,7 @@ function Layout(): JSX.Element {
                         </Dropdown.Toggle>
 
                         <Dropdown.Menu>
-                            <Dropdown.Item>Sair</Dropdown.Item>
+                            <Dropdown.Item onClick={signOut}>Sair</Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
                 </Nav>
