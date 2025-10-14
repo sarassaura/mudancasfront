@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Form, InputGroup, Pagination, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
@@ -18,6 +18,7 @@ const awardData: AwardEntry[] = [
   { id: 5, name: "Elton Alves", hoursWorked: "280h", extraHours: "80h", overnights: "5 dias" },
   { id: 6, name: "Mateus Silva", hoursWorked: "250h", extraHours: "50h", overnights: "3 dias" },
 ];
+
 
 function Awards(): JSX.Element {
   const navigate = useNavigate();
