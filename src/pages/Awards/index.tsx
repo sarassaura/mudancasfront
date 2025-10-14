@@ -188,7 +188,7 @@ function Awards(): JSX.Element {
         console.error("Erro ao buscar premiações:", err);
         setLoading(false);
       });
-  }, [selectedDay, selectedMonth, selectedYear]);
+  }, [selectedDay, selectedMonth, selectedYear, API_BASE_URL, sortConfig.key, sortConfig.order]);
 
   useEffect(() => {
     if (rawData.length > 0) {
@@ -199,7 +199,7 @@ function Awards(): JSX.Element {
       setAllSortedData(sorted);
       setCurrentPage(1);
     }
-  }, [selectedDay, selectedMonth, selectedYear, rawData]);
+  }, [selectedDay, selectedMonth, selectedYear, rawData, sortConfig.key, sortConfig.order]);
 
   const handleExportPDF = () => {
     const element = contentRef.current;
@@ -218,7 +218,7 @@ function Awards(): JSX.Element {
       jsPDF: { 
         unit: 'mm', 
         format: 'a4', 
-        orientation: 'landscape' 
+        orientation: 'landscape' as const
       },
       pagebreak: { mode: 'avoid-all' }
     };

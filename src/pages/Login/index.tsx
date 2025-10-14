@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState, type JSX } from "react";
-import { Button, Form, InputGroup } from "react-bootstrap";
+import { Form, InputGroup } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import UserContext from "../../context/user";
 import { showError } from "../../components/ToastAlerts/ShowError";
@@ -44,7 +44,7 @@ function Login(): JSX.Element {
     if (user) {
       navigate("/");
     }
-  }, []);
+  }, [API_BASE_URL, navigate, user]);
 
   const validarUsuario = () => {
     const admin = admins.filter((admin) => admin.email == email && admin.senha == senha);

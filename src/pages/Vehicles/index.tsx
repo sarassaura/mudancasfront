@@ -6,6 +6,8 @@ import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosVeiculo } from "../../types";
 import CustomButton from "../../components/CustomButton";
 
+type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
 function Vehicles(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ function Vehicles(): JSX.Element {
 
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<FormElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -53,6 +55,7 @@ function Vehicles(): JSX.Element {
         showError(errorData.message || "Erro ao cadastrar veículo");
       }
     } catch (error) {
+      console.error(error);
       showError("Erro de conexão com o servidor.");
     } finally {
       setLoading(false);

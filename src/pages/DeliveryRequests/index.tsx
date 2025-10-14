@@ -115,7 +115,7 @@ useEffect(() => {
       console.error("Erro ao buscar pedidos:", err);
       setLoading(false);
   });
-}, [selectedDay, selectedMonth, selectedYear]);
+}, [API_BASE_URL, selectedDay, selectedMonth, selectedYear]);
 
 useEffect(() => {
   const newFiltered = filterPedidos(rawData, selectedDay, selectedMonth, selectedYear);
@@ -131,7 +131,7 @@ const handleExportPDF = () => {
   const opt = {
     margin: 0,
     filename: 'pedidos_filtrados.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: { 
       scale: 2, 
       scroll: 0, 
@@ -141,7 +141,7 @@ const handleExportPDF = () => {
     jsPDF: { 
       unit: 'mm', 
       format: 'a4', 
-      orientation: 'landscape' 
+      orientation: 'landscape' as const
     },
     pagebreak: { mode: 'avoid-all' }
   };

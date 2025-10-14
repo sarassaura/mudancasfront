@@ -46,7 +46,7 @@ function Requests(): JSX.Element {
       }
     };
     fetchData();
-  }, []);
+  }, [API_BASE_URL]);
 
   const formatDateToString = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, "0");

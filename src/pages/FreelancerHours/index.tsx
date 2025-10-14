@@ -109,7 +109,7 @@ function FreelancerHours(): JSX.Element {
     };
 
     fetchAutonomos();
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleAddDay = () => {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;

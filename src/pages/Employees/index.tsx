@@ -6,6 +6,8 @@ import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosFuncionario, Equipe } from "../../types";
 import CustomButton from "../../components/CustomButton";
 
+type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
 function Employees(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ function Employees(): JSX.Element {
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<FormElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -42,7 +44,7 @@ function Employees(): JSX.Element {
     };
 
     fetchEquipes();
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +83,7 @@ function Employees(): JSX.Element {
         showError(errorData.message || "Erro ao cadastrar funcionário");
       }
     } catch (error) {
+      console.error(error);
       showError("Erro de conexão com o servidor.");
     } finally {
       setLoading(false);
