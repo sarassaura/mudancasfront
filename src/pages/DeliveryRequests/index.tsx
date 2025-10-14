@@ -35,7 +35,7 @@ function DeliveryRequests(): JSX.Element {
   }, []);
   
   return (
-    <div className="mx-auto d-flex flex-column">
+    <div className="mx-auto d-flex flex-column container-fluid">
       <div className="d-flex justify-content-between p-4 mb-3">
         <button 
           onClick={() => navigate('/')}
