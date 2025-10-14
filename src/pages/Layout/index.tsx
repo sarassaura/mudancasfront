@@ -1,4 +1,4 @@
-import { useContext, type JSX } from "react";
+import { useContext, useEffect, useState, type JSX } from "react";
 import { Container, Dropdown, Nav, Navbar } from "react-bootstrap";
 import { Outlet } from "react-router-dom";
 import { Link } from 'react-router-dom';
@@ -6,14 +6,28 @@ import Logo from '../../assets/Logo.svg';
 import UserContext from "../../context/user";
 
 function Layout(): JSX.Element {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
   const { user, setUser } = useContext(UserContext)!;
   const signOut = () => {
     localStorage.removeItem('user');
     setUser(null);
   }
+
+  useEffect(() => {
+    const handleResize = () => {
+        setIsMobile(window.innerWidth < 992);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+const theme = isMobile ? "light" : "dark";
+
   return (
     <>
-        <Navbar bg="light" data-bs-theme="dark">
+        <Navbar bg="light" data-bs-theme={theme} expand="lg">
             <Container>
                 <Navbar.Brand as={Link} to="/">
                     <img
@@ -23,6 +37,10 @@ function Layout(): JSX.Element {
                         className="d-inline-block align-top"
                     />
                 </Navbar.Brand>
+
+                <Navbar.Toggle aria-controls="basic-navbar-nav" />
+
+                <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="me-auto">
                     <Nav.Link className="text-dark" as={Link} to="/">Início</Nav.Link>
                     {user?.admin && (
@@ -31,8 +49,10 @@ function Layout(): JSX.Element {
                     <Nav.Link className="text-dark" as={Link} to="/pedidos-mudanca">Pedidos de Mudança</Nav.Link>
                     <Nav.Link className="text-dark" as={Link} to="/premiacoes">Premiações</Nav.Link>
                 </Nav>
-                <Nav>
-                    <Dropdown drop="down-centered">
+                </Navbar.Collapse>
+
+                <Nav className="ms-auto ms-lg-0">
+                    <Dropdown drop="down">
                         <Dropdown.Toggle id="dropdown-basic" variant="dark">
                             <i className="bi bi-person-circle"></i>
                         </Dropdown.Toggle>
