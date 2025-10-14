@@ -1,6 +1,7 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Form, InputGroup, Pagination, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import html2pdf from 'html2pdf.js'; 
 
 interface Premiacoes {
   _id: string;
@@ -115,8 +116,9 @@ const filterAndAggregateData = (
 }
 
 function Awards(): JSX.Element {
+  const contentRef = useRef<HTMLDivElement>(null)
   const [rawData, setRawData] = useState<Premiacoes[]>([]);
-  const [sortedData, setSortedData] = useState<AwardEntry[]>([]);
+  const [allSortedData, setAllSortedData] = useState<AwardEntry[]>([]);
   const [selectedDay, setSelectedDay] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
@@ -159,9 +161,9 @@ function Awards(): JSX.Element {
     const isSameColumn = sortConfig.key === column;
     const newOrder = isSameColumn && sortConfig.order === "asc" ? "desc" : "asc";
 
-    const sorted = sortData(sortedData, column, newOrder);
+    const sorted = sortData(allSortedData, column, newOrder);
 
-    setSortedData(sorted);
+    setAllSortedData(sorted);
     setSortConfig({ key: column, order: newOrder });
   };
 
@@ -176,7 +178,7 @@ function Awards(): JSX.Element {
 
         const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
 
-        setSortedData(sorted);
+        setAllSortedData(sorted);
         setCurrentPage(1);
         setLoading(false);
       })
@@ -192,14 +194,40 @@ function Awards(): JSX.Element {
       
       const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
       
-      setSortedData(sorted);
+      setAllSortedData(sorted);
       setCurrentPage(1);
     }
   }, [selectedDay, selectedMonth, selectedYear, rawData]);
 
+  const handleExportPDF = () => {
+    const element = contentRef.current;
+    if (!element) return;
+    
+    const opt = {
+      margin: 0,
+      filename: 'premiacoes_filtradas.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        scroll: 0, 
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight + 10,
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'landscape' 
+      },
+      pagebreak: { mode: 'avoid-all' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
+  const paginateAwards = allSortedData;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = sortedData.slice(startIndex, startIndex + itemsPerPage);
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const currentData = paginateAwards.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.ceil(paginateAwards.length / itemsPerPage);
 
   const renderPaginationItems = () => {
     const items = [];
@@ -242,7 +270,7 @@ function Awards(): JSX.Element {
     );
 
   return (
-    <div className="mx-auto d-flex flex-column">
+    <div className="mx-auto d-flex flex-column" ref={contentRef}>
       <div className="d-flex justify-content-between p-4 mb-3">
         <button 
           onClick={() => navigate('/')}
@@ -259,6 +287,7 @@ function Awards(): JSX.Element {
           Voltar
         </button>
         <button
+          onClick={handleExportPDF}
           style={{
             border: 'none', 
             backgroundColor: 'transparent', 
