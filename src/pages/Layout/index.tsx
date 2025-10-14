@@ -8,6 +8,7 @@ import UserContext from "../../context/user";
 function Layout(): JSX.Element {
   const { user, setUser } = useContext(UserContext)!;
   const signOut = () => {
+    localStorage.removeItem('user');
     setUser(null);
   }
   return (

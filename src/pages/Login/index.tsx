@@ -55,17 +55,19 @@ function Login(): JSX.Element {
         setEmail('');
         setSenha('');
     } else if (admin.length) {
-      setUser({
+      const userData = {
         _id: admin[0]._id,
         email: admin[0].email,
         nome: admin[0].nome,
         senha: admin[0].senha,
         admin: true,
-      });
+      }
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
       showSuccess(`Bem vindo ${admin[0].nome}!`);
       navigate("/");
     } else if (funcionario.length) {
-        setUser({
+      const userData = {
         _id: funcionario[0]._id,
         email: funcionario[0].email,
         equipe: {
@@ -75,7 +77,9 @@ function Login(): JSX.Element {
         nome: funcionario[0].nome,
         senha: funcionario[0].senha,
         admin: false,
-      });
+      }
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
       showSuccess(`Bem vindo ${funcionario[0].nome}!`);
       navigate("/");
     }

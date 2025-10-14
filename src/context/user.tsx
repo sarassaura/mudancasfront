@@ -18,7 +18,21 @@ const UserContext = React.createContext<{
 } | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode}) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem("user");
+    
+    if (storedUser) {
+      try {
+        const parsedUser: User = JSON.parse(storedUser);
+        if (parsedUser.nome && parsedUser.senha) {
+          return parsedUser;
+        }
+      } catch (error) {
+        console.error("Erro ao ler usuário do localStorage:", error);
+      }
+    }
+    return null;
+  });
   
   const value = { user, setUser };
 
