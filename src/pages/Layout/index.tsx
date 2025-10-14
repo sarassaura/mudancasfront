@@ -28,7 +28,7 @@ function Layout(): JSX.Element {
                     {user?.admin && (
                         <Nav.Link className="text-dark" as={Link} to="/cadastrar">Cadastrar</Nav.Link>
                     )}
-                    <Nav.Link className="text-dark" as={Link} to="/pedidos-mudanca">Pedidos de Mundança</Nav.Link>
+                    <Nav.Link className="text-dark" as={Link} to="/pedidos-mudanca">Pedidos de Mudança</Nav.Link>
                     <Nav.Link className="text-dark" as={Link} to="/premiacoes">Premiações</Nav.Link>
                 </Nav>
                 <Nav>

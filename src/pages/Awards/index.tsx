@@ -136,7 +136,7 @@ function Awards(): JSX.Element {
   
   const [sortConfig, setSortConfig] = useState<{ key: keyof AwardEntry; order: "asc" | "desc" }>({
     key: "hoursWorked",
-    order: "asc",
+    order: "desc",
   });
 
   const sortData = (dataToSort: AwardEntry[], key: keyof AwardEntry, order: "asc" | "desc"): AwardEntry[] => {
