@@ -27,20 +27,41 @@ function Awards(): JSX.Element {
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
   ];
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortConfig, setSortConfig] = useState<{ key: keyof AwardEntry; order: "asc" | "desc" }>({
+    key: "hoursWorked",
+    order: "asc",
+  });
   const [sortedData, setSortedData] = useState(awardData);
 
-  const handleSort = () => {
-    const newOrder = sortOrder === "asc" ? "desc" : "asc";
+  const handleSort = (column: keyof AwardEntry) => {
+    const isSameColumn = sortConfig.key === column;
+    const newOrder = isSameColumn && sortConfig.order === "asc" ? "desc" : "asc";
 
     const sorted = [...sortedData].sort((a, b) => {
-      const aValue = parseInt(a.hoursWorked);
-      const bValue = parseInt(b.hoursWorked);
+      const getValue = (val: string | number) =>
+        parseInt(String(val).replace(/\D/g, "")) || 0;
+      const aValue = getValue(a[column]);
+      const bValue = getValue(b[column]);
       return newOrder === "asc" ? aValue - bValue : bValue - aValue;
     });
 
     setSortedData(sorted);
-    setSortOrder(newOrder);
+    setSortConfig({ key: column, order: newOrder });
+  };
+
+  const renderSortIcon = (column: keyof AwardEntry) => {
+    const isActive = sortConfig.key === column || (sortConfig.key === "hoursWorked" && column === "hoursWorked");
+    const iconVisibility = isActive ? "visible" : "hidden";
+
+    return (
+      <i
+        className={`bi bi-arrow-${sortConfig.order === "asc" ? "down" : "up"} ms-1`}
+        style={{
+          visibility: iconVisibility,
+          width: "16px",
+        }}
+      ></i>
+    );
   };
 
   return (
@@ -128,16 +149,23 @@ function Awards(): JSX.Element {
             <tr>
               <th>#</th>
               <th>Nome</th>
-              <th style={{ cursor: 'pointer' }} onClick={handleSort}> 
+              <th style={{ cursor: 'pointer' }} onClick={() => handleSort("hoursWorked")}> 
                 Horas Trabalhadas 
-                {sortOrder === "asc" ? (
-                  <i className="bi bi-arrow-down"></i>
-                ) : (
-                  <i className="bi bi-arrow-up"></i>
-                )}
+                {renderSortIcon("hoursWorked")}
               </th>
-              <th>Horas Extras</th>
-              <th>Pernoites</th>
+              <th
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("extraHours")}>
+                  Horas Extras
+                  {renderSortIcon("extraHours")}
+                </th>
+              <th
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("overnights")}
+              >
+                Pernoites
+                {renderSortIcon("overnights")}
+              </th>
             </tr>
           </thead>
           <tbody>
