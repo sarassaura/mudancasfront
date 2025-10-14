@@ -2,6 +2,8 @@ import { useContext, useEffect, useState, type JSX } from "react";
 import { Button, Form, InputGroup } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import UserContext from "../../context/user";
+import { showError } from "../../components/ToastAlerts/ShowError";
+import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 
 export interface Admin {
     "_id": string,
@@ -51,6 +53,7 @@ function Login(): JSX.Element {
 
     if (admin.length == 0 && funcionario.length == 0) {
         console.log('Login Failed');
+        showError("Ops! Não conseguimos encontrar uma conta com esse usuário ou senha. Tente novamente.");
         setEmail('');
         setSenha('');
     } else if (admin.length) {
@@ -58,8 +61,10 @@ function Login(): JSX.Element {
         _id: admin[0]._id,
         email: admin[0].email,
         nome: admin[0].nome,
-        senha: admin[0].senha
+        senha: admin[0].senha,
+        admin: true,
       });
+      showSuccess(`Bem vindo ${admin[0].nome}!`);
       navigate("/");
     } else if (funcionario.length) {
         setUser({
@@ -70,8 +75,10 @@ function Login(): JSX.Element {
           nome: funcionario[0].equipe.nome
         },
         nome: funcionario[0].nome,
-        senha: funcionario[0].senha
+        senha: funcionario[0].senha,
+        admin: false,
       });
+      showSuccess(`Bem vindo ${funcionario[0].nome}!`);
       navigate("/");
     }
   };

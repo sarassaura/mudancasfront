@@ -9,6 +9,7 @@ interface User {
     }
     "nome": string,
     "senha": string,
+    "admin": boolean,
 }
 
 const UserContext = React.createContext<{
