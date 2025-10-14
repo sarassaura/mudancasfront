@@ -1,12 +1,14 @@
 import { type JSX, useState } from "react";
-import { Button, Form, InputGroup } from "react-bootstrap";
+import { Form, InputGroup } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import { showError } from "../../components/ToastAlerts/ShowError";
 import type { DadosAdmin } from "../../types";
+import CustomButton from "../../components/CustomButton";
 
 function Admins(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const navigate = useNavigate();
   const [formData, setFormData] = useState<DadosAdmin>({
     nome: "",
@@ -60,7 +62,7 @@ function Admins(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-primary text-center">Cadastro de Admin</h1>
+      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>Cadastro de Admin</h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="formGridAddress1">
           <Form.Label>Nome</Form.Label>
@@ -113,27 +115,22 @@ function Admins(): JSX.Element {
         </Form.Group>
 
         <div className="row mb-3 d-flex flex-col">
-          <Button
-            variant="outline-primary"
+          <CustomButton
             type="button"
             className="col-6 mx-auto"
-            size="lg"
-            style={{ width: "200px" }}
             onClick={() => navigate("/cadastrar")}
             disabled={loading}
+            isOutline
           >
             Voltar
-          </Button>
-          <Button
-            variant="primary"
+          </CustomButton>
+          <CustomButton
             type="submit"
             className="col-6 mx-auto"
-            size="lg"
-            style={{ width: "200px" }}
             disabled={loading}
           >
             {loading ? "Cadastrando..." : "Salvar"}
-          </Button>
+          </CustomButton>
         </div>
       </Form>
     </div>
