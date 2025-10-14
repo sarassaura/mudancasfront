@@ -14,28 +14,34 @@ import Teams from './pages/Teams';
 import Requests from './pages/Requests';
 import FreelancerHours from './pages/FreelancerHours';
 import Vehicles from './pages/Vehicles';
+import Login from './pages/Login';
+import { UserProvider } from './context/user';
+import Unauthorized from './pages/Unauthorized';
+
 
 function App() {
-
   return (
-    <>
+    <UserProvider>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="/cadastrar" element={<Register />} />
-          <Route path="/pedidos-mudanca" element={<DeliveryRequests />} />
-          <Route path="/premiacoes" element={<Awards />} />
-          <Route path="/admins" element={<Admins />} />
-          <Route path="/funcionarios" element={<Employees />} />
-          <Route path="/autonomos" element={<Freelancers />} />
-          <Route path="/equipes" element={<Teams />} />
-          <Route path="/pedidos" element={<Requests />} />
-          <Route path="/horas" element={<FreelancerHours />} />
-          <Route path="/veiculos" element={<Vehicles />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Unauthorized />}>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="/cadastrar" element={<Register />} />
+            <Route path="/pedidos-mudanca" element={<DeliveryRequests />} />
+            <Route path="/premiacoes" element={<Awards />} />
+            <Route path="/admins" element={<Admins />} />
+            <Route path="/funcionarios" element={<Employees />} />
+            <Route path="/autonomos" element={<Freelancers />} />
+            <Route path="/equipes" element={<Teams />} />
+            <Route path="/pedidos" element={<Requests />} />
+            <Route path="/horas" element={<FreelancerHours />} />
+            <Route path="/veiculos" element={<Vehicles />} />
+          </Route>
         </Route>
       </Routes>
-    </>
+    </UserProvider>
   )
 }
 
