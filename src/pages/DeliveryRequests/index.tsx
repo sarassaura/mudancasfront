@@ -1,10 +1,32 @@
-import type { JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import RequestCard from "../../components/Card";
 import { Form, InputGroup, Pagination } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
+interface Pedidos {
+  "_id": string,
+  "data_entrega": string,
+  "data_retirada": string,
+  equipe: {
+    "_id": string,
+    nome: string,
+  },
+  veiculo: {
+    "_id": string,
+    nome: string,
+  },
+  descricao?: string,
+}
+
 function DeliveryRequests(): JSX.Element {
+  const [pedidos, setPedidos] = useState<Pedidos[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/pedidos")
+    .then(response => response.json())
+    .then(data => setPedidos(data));
+  }, []);
   
   return (
     <div className="mx-auto d-flex flex-column">
@@ -72,34 +94,15 @@ function DeliveryRequests(): JSX.Element {
         </div>
         
         <div className="d-flex flex-wrap justify-content-center gap-4 mb-5">
-          <RequestCard 
-            team="Vendas"
-            startDate="12/03/2025"
-            endDate="12/03/2025"
-            vehicle="QKR9232"
-            description="Some quick example text to build on the card title and make up the bulk of the card's content."
-          />
-          <RequestCard 
-            team="Logística"
-            startDate="15/04/2025"
-            endDate="18/04/2025"
-            vehicle="ABC1A23"
-            description="Planejamento de rotas e entrega de materiais sensíveis."
-          />
-          <RequestCard 
-            team="Vendas"
-            startDate="12/03/2025"
-            endDate="12/03/2025"
-            vehicle="QKR9232"
-            description="Some quick example text to build on the card title and make up the bulk of the card's content."
-          />
-          <RequestCard 
-            team="Logística"
-            startDate="15/04/2025"
-            endDate="18/04/2025"
-            vehicle="ABC1A23"
-            description="Planejamento de rotas e entrega de materiais sensíveis."
-          />
+          {pedidos.map((pedido) => (
+            <RequestCard 
+              team={pedido.equipe.nome}
+              startDate={pedido.data_entrega}
+              endDate={pedido.data_retirada}
+              vehicle={pedido.veiculo.nome}
+              description={pedido.descricao ?? ''}
+            />
+          ))}
         </div>
 
         <div className="d-flex justify-content-center mb-5">

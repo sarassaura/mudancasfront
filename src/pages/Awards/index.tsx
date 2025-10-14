@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Form, InputGroup, Pagination, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
@@ -19,9 +19,10 @@ const awardData: AwardEntry[] = [
   { id: 6, name: "Mateus Silva", hoursWorked: "250h", extraHours: "50h", overnights: "3 dias" },
 ];
 
+
 function Awards(): JSX.Element {
   const navigate = useNavigate();
-  
+
   return (
     <div className="mx-auto d-flex flex-column">
       <div className="d-flex justify-content-between p-4 mb-3">
