@@ -24,6 +24,7 @@ export interface Funcionario {
 }
 
 function Login(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { user, setUser } = useContext(UserContext)!;
   const navigate = useNavigate();
   const [admins, setAdmins] = useState<Admin[]>([]);
@@ -32,10 +33,10 @@ function Login(): JSX.Element {
   const [senha, setSenha] = useState<string>('');
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/admins")
+    fetch(`${API_BASE_URL}/admins`)
         .then(response => response.json())
         .then(data => setAdmins(data));
-    fetch("http://localhost:5000/api/funcionarios")
+    fetch(`${API_BASE_URL}/funcionarios`)
     .then(response => response.json())
     .then(data => setFuncionarios(data));
 

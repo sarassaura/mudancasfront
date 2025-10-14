@@ -86,6 +86,7 @@ const DayRow = ({
 );
 
 function FreelancerHours(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
     { id: 1, date: null, hours: 3, overnight: false },
@@ -98,7 +99,7 @@ function FreelancerHours(): JSX.Element {
   useEffect(() => {
     const fetchAutonomos = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/autonomos");
+        const response = await fetch(`${API_BASE_URL}/autonomos`);
         const data = await response.json();
         setAutonomos(data);
       } catch (error) {
@@ -159,7 +160,7 @@ function FreelancerHours(): JSX.Element {
 
           console.log("Enviando:", dadosParaEnviar);
 
-          const response = await fetch("http://localhost:5000/api/data", {
+          const response = await fetch(`${API_BASE_URL}/data`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

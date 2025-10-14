@@ -6,6 +6,7 @@ import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosEquipe } from "../../types";
 
 function Teams(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<DadosEquipe>({
@@ -33,7 +34,7 @@ function Teams(): JSX.Element {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/equipes", {
+      const response = await fetch(`${API_BASE_URL}/equipes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

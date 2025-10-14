@@ -6,6 +6,7 @@ import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosFuncionario, Equipe } from "../../types";
 
 function Employees(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<DadosFuncionario>({
@@ -30,7 +31,7 @@ function Employees(): JSX.Element {
     const fetchEquipes = async () => {
       try {
         const equipesResponse = await fetch(
-          "http://localhost:5000/api/equipes"
+          `${API_BASE_URL}/equipes`
         );
         const equipesData = await equipesResponse.json();
         setEquipes(equipesData);
@@ -58,7 +59,7 @@ function Employees(): JSX.Element {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/funcionarios", {
+      const response = await fetch(`${API_BASE_URL}/funcionarios`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

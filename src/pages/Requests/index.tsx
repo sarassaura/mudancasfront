@@ -8,6 +8,7 @@ import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosPedido, Equipe, Veiculo } from "../../types";
 
 function Requests(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
   const [takeoutDate, setTakeoutDate] = useState<Date | null>(null);
@@ -29,13 +30,13 @@ function Requests(): JSX.Element {
     const fetchData = async () => {
       try {
         const equipesResponse = await fetch(
-          "http://localhost:5000/api/equipes"
+          `${API_BASE_URL}/equipes`
         );
         const equipesData = await equipesResponse.json();
         setEquipes(equipesData);
 
         const veiculosResponse = await fetch(
-          "http://localhost:5000/api/veiculos"
+          `${API_BASE_URL}/veiculos`
         );
         const veiculosData = await veiculosResponse.json();
         setVeiculos(veiculosData);
@@ -101,7 +102,7 @@ function Requests(): JSX.Element {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/pedidos", {
+      const response = await fetch(`${API_BASE_URL}/pedidos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
