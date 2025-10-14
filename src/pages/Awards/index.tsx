@@ -271,8 +271,8 @@ function Awards(): JSX.Element {
     );
 
   return (
-    <div className="mx-auto d-flex flex-column" ref={contentRef}>
-      <div className="d-flex justify-content-between p-4 mb-3">
+    <div className="w-100 d-flex flex-column" ref={contentRef}>
+      <div className="d-flex justify-content-between px-3 px-md-5 pt-4 mb-3">
         <button 
           onClick={() => navigate('/')}
           style={{
@@ -303,11 +303,11 @@ function Awards(): JSX.Element {
         </button>
       </div>
 
-      <div className="mx-auto px-0" style={{ width: '1110px' }}>
+      <div className="mx-auto w-100 px-3 px-md-5" style={{ maxWidth: '1200px' }} >
         <h1 className="h1 fw-bold text-primary text-center mb-4">Premiações</h1>
         <div className="d-flex justify-content-end mb-4">
-          <div className="d-flex gap-3">
-            <InputGroup style={{ width: '120px' }}>
+          <div className="d-flex flex-wrap justify-content-center justify-content-md-end gap-3 w-100 w-md-auto">
+            <InputGroup className="flex-grow-1" style={{ maxWidth: '120px', minWidth: '100px' }}>
               <InputGroup.Text>
                 <i className="bi bi-calendar-day"></i> 
               </InputGroup.Text>
@@ -321,7 +321,7 @@ function Awards(): JSX.Element {
               </Form.Select>
             </InputGroup>
 
-            <InputGroup style={{ width: '130px' }}>
+            <InputGroup className="flex-grow-1" style={{ maxWidth: '130px', minWidth: '120px' }}>
               <InputGroup.Text>
                 <i className="bi bi-calendar-month"></i>
               </InputGroup.Text>
@@ -335,7 +335,7 @@ function Awards(): JSX.Element {
               </Form.Select>
             </InputGroup>
 
-            <InputGroup style={{ width: '130px' }}>
+            <InputGroup className="flex-grow-1" style={{ maxWidth: '130px', minWidth: '120px' }}>
               <InputGroup.Text>
                 <i className="bi bi-calendar-date"></i>
               </InputGroup.Text>
