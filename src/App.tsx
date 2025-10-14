@@ -1,23 +1,24 @@
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import { useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
-import Home from './pages/Home';
-import Layout from './pages/Layout';
-import Register from './pages/Register';
-import Awards from './pages/Awards';
-import DeliveryRequests from './pages/DeliveryRequests';
-import Admins from './pages/Admins';
-import Employees from './pages/Employees';
-import Freelancers from './pages/Freelancers';
-import Teams from './pages/Teams';
-import Requests from './pages/Requests';
-import FreelancerHours from './pages/FreelancerHours';
-import Vehicles from './pages/Vehicles';
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import { useEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
+import Home from "./pages/Home";
+import Layout from "./pages/Layout";
+import Register from "./pages/Register";
+import Awards from "./pages/Awards";
+import DeliveryRequests from "./pages/DeliveryRequests";
+import Admins from "./pages/Admins";
+import Employees from "./pages/Employees";
+import Freelancers from "./pages/Freelancers";
+import Teams from "./pages/Teams";
+import Requests from "./pages/Requests";
+import FreelancerHours from "./pages/FreelancerHours";
+import Vehicles from "./pages/Vehicles";
 import Login from './pages/Login';
 import { UserProvider } from './context/user';
 import Unauthorized from './pages/Unauthorized';
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   return (
@@ -41,8 +42,9 @@ function App() {
           </Route>
         </Route>
       </Routes>
+      <ToastContainer />
     </UserProvider>
-  )
+  );
 }
 
 function ScrollToTop() {
@@ -55,4 +57,4 @@ function ScrollToTop() {
   return null;
 }
 
-export default App
+export default App;
