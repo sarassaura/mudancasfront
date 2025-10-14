@@ -45,14 +45,12 @@ function Login(): JSX.Element {
   }, []);
 
   const validarUsuario = () => {
-    console.log(admins)
     const admin = admins.filter((admin) => admin.email == email && admin.senha == senha);
     const funcionario = funcionarios.filter(
         (funcionario) => funcionario.email == email && funcionario.senha == senha
     );
 
     if (admin.length == 0 && funcionario.length == 0) {
-        console.log('Login Failed');
         showError("Ops! Não conseguimos encontrar uma conta com esse usuário ou senha. Tente novamente.");
         setEmail('');
         setSenha('');
