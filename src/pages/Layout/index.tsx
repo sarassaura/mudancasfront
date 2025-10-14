@@ -26,7 +26,7 @@ function Layout(): JSX.Element {
 }, []);
 
 const theme = isMobile ? "light" : "dark";
-const HOVER_DARKER_COLOR = '#C62A30';
+const HOVER_DARKER_COLOR = '#4d5154';
 
 const logoutItemStyle = {
     backgroundColor: isLogoutHover ? HOVER_DARKER_COLOR : 'transparent',
@@ -35,7 +35,7 @@ const logoutItemStyle = {
 
   return (
     <>
-        <Navbar bg="light" data-bs-theme={theme} expand="lg">
+        <Navbar style={{ backgroundColor: '#C9CCCE' }} data-bs-theme={theme} expand="lg">
             <Container>
                 <Navbar.Brand as={Link} to="/">
                     <img
