@@ -30,8 +30,6 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="/cadastrar" element={<Register />} />
-            <Route path="/pedidos-mudanca" element={<DeliveryRequests />} />
-            <Route path="/premiacoes" element={<Awards />} />
             <Route path="/admins" element={<Admins />} />
             <Route path="/funcionarios" element={<Employees />} />
             <Route path="/autonomos" element={<Freelancers />} />
@@ -39,6 +37,8 @@ function App() {
             <Route path="/pedidos" element={<Requests />} />
             <Route path="/horas" element={<FreelancerHours />} />
             <Route path="/veiculos" element={<Vehicles />} />
+            <Route path="/pedidos-mudanca" element={<DeliveryRequests />} />
+            <Route path="/premiacoes" element={<Awards />} />
           </Route>
         </Route>
       </Routes>
