@@ -109,6 +109,10 @@ function DeliveryRequests(): JSX.Element {
   ];
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
 
+  const handleEditRequest = (_id: string) => {
+    navigate(`/pedidos`); 
+  };
+
   useEffect(() => {
     setLoading(true);
     fetch(`${API_BASE_URL}/pedidos`)
@@ -311,12 +315,15 @@ function DeliveryRequests(): JSX.Element {
             {currentData.map((pedido) => (
               <RequestCard 
                 key={pedido._id}
+                pedidoId={pedido._id}
                 title={pedido.title}
                 team={pedido.equipe.nome}
                 startDate={pedido.data_entrega}
                 endDate={pedido.data_retirada}
                 vehicle={pedido.veiculo.nome}
                 description={pedido.descricao ?? ''}
+                onEdit={() => handleEditRequest(pedido._id)} 
+                onInactivate={() => {}}
               />
             ))
           }
