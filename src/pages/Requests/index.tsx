@@ -37,13 +37,6 @@ function Requests(): JSX.Element {
     }));
   };
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      status: e.target.value,
-    }));
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -260,25 +253,6 @@ function Requests(): JSX.Element {
               resize: "none",
             }}
           />
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="formGridStatus">
-          <Form.Label>Status do Pedido</Form.Label>
-          <div className="d-flex justify-content-between">
-            {['Finalizado', 'Em Andamento', 'Cancelado'].map((statusOption) => (
-              <Form.Check
-                key={statusOption}
-                type="radio"
-                id={`status-${statusOption}`}
-                label={statusOption}
-                name="status"
-                value={statusOption}
-                checked={formData.status === statusOption}
-                onChange={handleStatusChange}
-                disabled={loading}
-              />
-            ))}
-          </div>
         </Form.Group>
 
         <div className="row mb-3 d-flex flex-col">
