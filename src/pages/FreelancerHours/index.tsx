@@ -188,7 +188,7 @@ function FreelancerHours(): JSX.Element {
   };
 
   return (
-    <div className="mx-auto d-flex flex-column">
+    <div className="mx-auto d-flex flex-column mt-4 mb-4">
       <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
         Cadastro de Horas Autônomos
       </h1>

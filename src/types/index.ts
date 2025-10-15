@@ -11,6 +11,7 @@ export interface DadosPedido {
   equipe: string;
   veiculo: string;
   descricao?: string;
+  status: string;
 }
 
 export interface DadosEquipe {

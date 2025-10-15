@@ -11,6 +11,13 @@ interface RequestCardProps {
 }
 
 function RequestCard({ title, team, startDate, endDate, vehicle, description }: RequestCardProps): JSX.Element {
+  const descriptionStyle = {
+    overflow: 'hidden',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical' as const,
+  };
+
   return (
     <div style={{ 
       border: '1px solid #DEE2E6', 
@@ -39,7 +46,7 @@ function RequestCard({ title, team, startDate, endDate, vehicle, description }: 
         Veículo: <span className="text-secondary">{vehicle}</span>
       </p>
 
-      <Card.Text className="text-secondary">
+      <Card.Text className="text-secondary" style={descriptionStyle}>
         {description}
       </Card.Text>
     </div>
