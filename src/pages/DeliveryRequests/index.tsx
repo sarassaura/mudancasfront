@@ -6,6 +6,7 @@ import html2pdf from 'html2pdf.js';
 
 interface Pedidos {
   "_id": string,
+  "title": string,
   "data_entrega": string,
   "data_retirada": string,
   equipe: {
@@ -80,7 +81,7 @@ const filterPedidos = (
 };
 
 function DeliveryRequests(): JSX.Element {
-  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const contentRef = useRef<HTMLDivElement>(null)
   const [rawData, setRawData] = useState<Pedidos[]>([]);
   const [allFilteredPedidos, setAllFilteredPedidos] = useState<Pedidos[]>([]);
@@ -265,6 +266,7 @@ if (loading)
             {currentData.map((pedido) => (
               <RequestCard 
                 key={pedido._id}
+                title={pedido.title}
                 team={pedido.equipe.nome}
                 startDate={pedido.data_entrega}
                 endDate={pedido.data_retirada}

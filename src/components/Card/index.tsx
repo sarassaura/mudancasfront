@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { Card } from "react-bootstrap";
 
 interface RequestCardProps {
+  title: string;
   team: string;
   startDate: string;
   endDate: string;
@@ -9,7 +10,7 @@ interface RequestCardProps {
   description: string;
 }
 
-function RequestCard({ team, startDate, endDate, vehicle, description }: RequestCardProps): JSX.Element {
+function RequestCard({ title, team, startDate, endDate, vehicle, description }: RequestCardProps): JSX.Element {
   return (
     <div style={{ 
       border: '1px solid #DEE2E6', 
@@ -17,11 +18,11 @@ function RequestCard({ team, startDate, endDate, vehicle, description }: Request
       padding: '24px', 
       width: '350px'
     }}>
-      <Card.Title className="fw-bold mb-3">
-        Equipe: {team}
+      <Card.Title className="fw-bold mb-4">
+        {title}
       </Card.Title>
 
-      <div className="d-flex justify-content-between mb-2">
+      <div className="d-flex justify-content-between mb-4">
         <span className="text-secondary">
           Início: <span className="text-secondary">{startDate}</span>
         </span>
@@ -29,6 +30,10 @@ function RequestCard({ team, startDate, endDate, vehicle, description }: Request
           Fim: <span className="text-secondary">{endDate}</span>
         </span>
       </div>
+
+      <p className="mb-3 text-secondary">
+        Equipe: <span className="text-secondary">{team}</span>
+      </p>
 
       <p className="mb-3 text-secondary">
         Veículo: <span className="text-secondary">{vehicle}</span>

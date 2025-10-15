@@ -25,7 +25,7 @@ export interface Funcionario {
 }
 
 function Login(): JSX.Element {
-  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { user, setUser } = useContext(UserContext)!;
   const navigate = useNavigate();
   const [admins, setAdmins] = useState<Admin[]>([]);
