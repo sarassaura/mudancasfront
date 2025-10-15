@@ -1,9 +1,12 @@
 import { type JSX, useState } from "react";
-import { Button, Form, InputGroup } from "react-bootstrap";
+import { Form, InputGroup } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { showError } from "../../components/ToastAlerts/ShowError";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosEquipe } from "../../types";
+import CustomButton from "../../components/CustomButton";
+
+type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 function Teams(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -15,7 +18,7 @@ function Teams(): JSX.Element {
 
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<FormElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -52,6 +55,7 @@ function Teams(): JSX.Element {
         showError(errorData.message || "Erro ao cadastrar equipe");
       }
     } catch (error) {
+      console.error(error);
       showError("Erro de conexão com o servidor.");
     } finally {
       setLoading(false);
@@ -60,7 +64,7 @@ function Teams(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-primary text-center">
+      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>
         Cadastro de Equipe
       </h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>
@@ -81,27 +85,22 @@ function Teams(): JSX.Element {
         </Form.Group>
 
         <div className="row mb-3 d-flex flex-col">
-          <Button
-            variant="outline-primary"
+          <CustomButton
             type="button"
             className="col-6 mx-auto"
-            size="lg"
-            style={{ width: "200px" }}
             onClick={() => navigate("/cadastrar")}
             disabled={loading}
+            isOutline
           >
             Voltar
-          </Button>
-          <Button
-            variant="primary"
+          </CustomButton>
+          <CustomButton
             type="submit"
             className="col-6 mx-auto"
-            size="lg"
-            style={{ width: "200px" }}
             disabled={loading}
           >
             {loading ? "Cadastrando..." : "Salvar"}
-          </Button>
+          </CustomButton>
         </div>
       </Form>
     </div>

@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { showError } from "../../components/ToastAlerts/ShowError";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosHorasAutonomo, Autonomo } from "../../types";
+import CustomButton from "../../components/CustomButton";
 
 interface HourEntry {
   id: number;
@@ -108,7 +109,7 @@ function FreelancerHours(): JSX.Element {
     };
 
     fetchAutonomos();
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleAddDay = () => {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;
@@ -188,7 +189,7 @@ function FreelancerHours(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-primary text-center">
+      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>
         Cadastro de Horas Autônomos
       </h1>
       <Form onSubmit={handleSubmit}>
@@ -230,27 +231,22 @@ function FreelancerHours(): JSX.Element {
         </div>
 
         <div className="row mb-3 d-flex flex-col">
-          <Button
-            variant="outline-primary"
+          <CustomButton
             type="button"
             className="col-6 mx-auto"
-            size="lg"
-            style={{ width: "200px" }}
             onClick={() => navigate("/cadastrar")}
             disabled={loading}
+            isOutline
           >
             Voltar
-          </Button>
-          <Button
-            variant="primary"
+          </CustomButton>
+          <CustomButton
             type="submit"
             className="col-6 mx-auto"
-            size="lg"
-            style={{ width: "200px" }}
             disabled={loading}
           >
             {loading ? "Cadastrando..." : "Salvar"}
-          </Button>
+          </CustomButton>
         </div>
       </Form>
     </div>

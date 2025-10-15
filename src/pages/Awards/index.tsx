@@ -22,6 +22,7 @@ interface AwardEntry {
   overnights: number;
 }
 
+const RED_COLOR = '#Ec3239'; 
 const jornadaNormalHoras = 150;
 
 const parseDateToLocal = (dateString: string): Date | null => {
@@ -187,7 +188,7 @@ function Awards(): JSX.Element {
         console.error("Erro ao buscar premiações:", err);
         setLoading(false);
       });
-  }, [selectedDay, selectedMonth, selectedYear]);
+  }, [selectedDay, selectedMonth, selectedYear, API_BASE_URL, sortConfig.key, sortConfig.order]);
 
   useEffect(() => {
     if (rawData.length > 0) {
@@ -198,7 +199,7 @@ function Awards(): JSX.Element {
       setAllSortedData(sorted);
       setCurrentPage(1);
     }
-  }, [selectedDay, selectedMonth, selectedYear, rawData]);
+  }, [selectedDay, selectedMonth, selectedYear, rawData, sortConfig.key, sortConfig.order]);
 
   const handleExportPDF = () => {
     const element = contentRef.current;
@@ -207,7 +208,7 @@ function Awards(): JSX.Element {
     const opt = {
       margin: 0,
       filename: 'premiacoes_filtradas.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { 
         scale: 2, 
         scroll: 0, 
@@ -217,7 +218,7 @@ function Awards(): JSX.Element {
       jsPDF: { 
         unit: 'mm', 
         format: 'a4', 
-        orientation: 'landscape' 
+        orientation: 'landscape' as const
       },
       pagebreak: { mode: 'avoid-all' }
     };
@@ -266,7 +267,7 @@ function Awards(): JSX.Element {
   if (loading)
     return (
       <div className="text-center p-5">
-        <h2 className="text-primary">Carregando premiações...</h2>
+        <h2 style={{ color: '#Ec3239' }}>Carregando premiações...</h2>
       </div>
     );
 
@@ -304,7 +305,7 @@ function Awards(): JSX.Element {
       </div>
 
       <div className="mx-auto w-100 px-3 px-md-5" style={{ maxWidth: '1200px' }} >
-        <h1 className="h1 fw-bold text-primary text-center mb-4">Premiações</h1>
+        <h1 className="h1 fw-bold text-center mb-4" style={{ color: '#Ec3239' }}>Premiações</h1>
         <div className="d-flex justify-content-end mb-4">
           <div className="d-flex flex-wrap justify-content-center justify-content-md-end gap-3 w-100 w-md-auto">
             <InputGroup className="flex-grow-1" style={{ maxWidth: '120px', minWidth: '100px' }}>
@@ -396,11 +397,13 @@ function Awards(): JSX.Element {
             <Pagination.Prev
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
+              style={{ color: RED_COLOR }}
             />
             {renderPaginationItems()}
             <Pagination.Next
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
+              style={{ color: RED_COLOR }}
             />
           </Pagination>
         </div>

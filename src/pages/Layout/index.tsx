@@ -8,6 +8,8 @@ import UserContext from "../../context/user";
 function Layout(): JSX.Element {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
   const { user, setUser } = useContext(UserContext)!;
+  const [isLogoutHover, setIsLogoutHover] = useState(false); 
+
   const signOut = () => {
     localStorage.removeItem('user');
     setUser(null);
@@ -24,10 +26,16 @@ function Layout(): JSX.Element {
 }, []);
 
 const theme = isMobile ? "light" : "dark";
+const HOVER_DARKER_COLOR = '#4d5154';
+
+const logoutItemStyle = {
+    backgroundColor: isLogoutHover ? HOVER_DARKER_COLOR : 'transparent',
+    color: 'white',
+};
 
   return (
     <>
-        <Navbar bg="light" data-bs-theme={theme} expand="lg">
+        <Navbar style={{ backgroundColor: '#C9CCCE' }} data-bs-theme={theme} expand="lg">
             <Container>
                 <Navbar.Brand as={Link} to="/">
                     <img
@@ -42,7 +50,7 @@ const theme = isMobile ? "light" : "dark";
 
                 <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="me-auto">
-                    <Nav.Link className="text-dark" as={Link} to="/">Início</Nav.Link>
+                    <Nav.Link style={{ color: '#EC3239' }} as={Link} to="/">Início</Nav.Link>
                     {user?.admin && (
                         <Nav.Link className="text-dark" as={Link} to="/cadastrar">Cadastrar</Nav.Link>
                     )}
@@ -58,7 +66,15 @@ const theme = isMobile ? "light" : "dark";
                         </Dropdown.Toggle>
 
                         <Dropdown.Menu>
-                            <Dropdown.Item onClick={signOut}>Sair</Dropdown.Item>
+                            <Dropdown.Item 
+                            onClick={signOut}
+                            style={logoutItemStyle}
+                            onMouseEnter={() => setIsLogoutHover(true)}
+                            onMouseLeave={() => setIsLogoutHover(false)}
+                            active={false} 
+                            >
+                                Sair
+                            </Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
                 </Nav>

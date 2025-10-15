@@ -115,7 +115,7 @@ useEffect(() => {
       console.error("Erro ao buscar pedidos:", err);
       setLoading(false);
   });
-}, [selectedDay, selectedMonth, selectedYear]);
+}, [API_BASE_URL, selectedDay, selectedMonth, selectedYear]);
 
 useEffect(() => {
   const newFiltered = filterPedidos(rawData, selectedDay, selectedMonth, selectedYear);
@@ -131,7 +131,7 @@ const handleExportPDF = () => {
   const opt = {
     margin: 0,
     filename: 'pedidos_filtrados.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: { 
       scale: 2, 
       scroll: 0, 
@@ -141,7 +141,7 @@ const handleExportPDF = () => {
     jsPDF: { 
       unit: 'mm', 
       format: 'a4', 
-      orientation: 'landscape' 
+      orientation: 'landscape' as const
     },
     pagebreak: { mode: 'avoid-all' }
   };
@@ -173,7 +173,7 @@ const renderPaginationItems = () => {
 if (loading)
   return (
     <div className="text-center p-5">
-      <h2 className="text-primary">Carregando pedidos...</h2>
+      <h2 style={{ color: '#Ec3239' }}>Carregando pedidos...</h2>
     </div>
   );
 
@@ -211,7 +211,7 @@ if (loading)
       </div>
 
       <div className="mx-auto w-100 px-3 px-md-5" style={{ maxWidth: '1200px' }}>
-        <h1 className="h1 fw-bold text-primary text-center mb-4">Pedidos de Mudança</h1>
+        <h1 className="h1 fw-bold text-center mb-4" style={{ color: '#Ec3239' }}>Pedidos de Mudança</h1>
         <div className="d-flex justify-content-end mb-4">
           <div className="d-flex flex-wrap justify-content-center justify-content-md-end gap-3 w-100 w-md-auto">
             <InputGroup className="flex-grow-1" style={{ maxWidth: '120px', minWidth: '100px' }}>

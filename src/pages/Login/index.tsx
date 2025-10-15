@@ -1,9 +1,10 @@
 import { useContext, useEffect, useState, type JSX } from "react";
-import { Button, Form, InputGroup } from "react-bootstrap";
+import { Form, InputGroup } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import UserContext from "../../context/user";
 import { showError } from "../../components/ToastAlerts/ShowError";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
+import CustomButton from "../../components/CustomButton";
 
 export interface Admin {
     "_id": string,
@@ -43,7 +44,7 @@ function Login(): JSX.Element {
     if (user) {
       navigate("/");
     }
-  }, []);
+  }, [API_BASE_URL, navigate, user]);
 
   const validarUsuario = () => {
     const admin = admins.filter((admin) => admin.email == email && admin.senha == senha);
@@ -88,7 +89,7 @@ function Login(): JSX.Element {
   
   return (
     <div className="m-auto d-flex flex-column container">
-        <h1 className="h1 fw-bold text-primary text-center">Entrar no sistema</h1>
+        <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>Entrar no sistema</h1>
         <Form style={{ width: "480px", margin: "auto" }}>
           <Form.Group className="mb-3" controlId="formGridAddress1" >
             <Form.Label>Email</Form.Label>
@@ -119,15 +120,12 @@ function Login(): JSX.Element {
           </Form.Group>
 
           <div className="row mb-3 d-flex flex-col">
-            <Button 
-              variant="primary" 
+            <CustomButton 
               className="col-6 mx-auto"
-              size="lg" 
-              style={{ width: '200px' }}
               onClick={validarUsuario}
             >
               Entrar
-            </Button>
+            </CustomButton>
           </div>
         </Form>
     </div>
