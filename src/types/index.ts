@@ -5,6 +5,7 @@ export interface DadosAdmin {
 }
 
 export interface DadosPedido {
+  title: string;
   data_entrega: string;
   data_retirada: string;
   equipe: string;
