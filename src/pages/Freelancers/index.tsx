@@ -9,7 +9,7 @@ import CustomButton from "../../components/CustomButton";
 type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 function Freelancers(): JSX.Element {
-  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<DadosAutonomo>({
@@ -64,7 +64,7 @@ function Freelancers(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>
+      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
         Cadastro de Profissional Autônomo
       </h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>

@@ -9,7 +9,7 @@ import CustomButton from "../../components/CustomButton";
 type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 function Employees(): JSX.Element {
-  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<DadosFuncionario>({
@@ -33,9 +33,7 @@ function Employees(): JSX.Element {
   useEffect(() => {
     const fetchEquipes = async () => {
       try {
-        const equipesResponse = await fetch(
-          `${API_BASE_URL}/equipes`
-        );
+        const equipesResponse = await fetch(`${API_BASE_URL}/equipes`);
         const equipesData = await equipesResponse.json();
         setEquipes(equipesData);
       } catch (error) {
@@ -92,7 +90,7 @@ function Employees(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>
+      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
         Cadastro de Funcionário
       </h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>

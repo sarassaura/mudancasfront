@@ -87,7 +87,7 @@ const DayRow = ({
 );
 
 function FreelancerHours(): JSX.Element {
-  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
     { id: 1, date: null, hours: 3, overnight: false },
@@ -189,7 +189,7 @@ function FreelancerHours(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>
+      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
         Cadastro de Horas Autônomos
       </h1>
       <Form onSubmit={handleSubmit}>
