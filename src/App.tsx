@@ -15,6 +15,7 @@ import Requests from "./pages/Requests";
 import FreelancerHours from "./pages/FreelancerHours";
 import Vehicles from "./pages/Vehicles";
 import Login from './pages/Login';
+import Manage from "./pages/Manage";
 import { UserProvider } from './context/user';
 import Unauthorized from './pages/Unauthorized';
 import { ToastContainer } from "react-toastify";
@@ -32,6 +33,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="/premiacoes" element={<Awards />} />
             <Route path="/pedidos-mudanca" element={<DeliveryRequests />} />
+            <Route path="/gerenciar" element={<Manage />} />
             <Route path="/" element={<UnauthorizedEmployee />}>
               <Route path="/cadastrar" element={<Register />} />
               <Route path="/admins" element={<Admins />} />

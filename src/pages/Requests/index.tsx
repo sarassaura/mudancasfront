@@ -15,6 +15,7 @@ function Requests(): JSX.Element {
   const [takeoutDate, setTakeoutDate] = useState<Date | null>(null);
 
   const [formData, setFormData] = useState<DadosPedido>({
+    title: "",
     data_entrega: "",
     data_retirada: "",
     equipe: "",
@@ -26,6 +27,14 @@ function Requests(): JSX.Element {
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
 
   const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target;
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,6 +97,7 @@ function Requests(): JSX.Element {
     setLoading(true);
 
     if (
+      !formData.title ||
       !formData.data_entrega ||
       !formData.data_retirada ||
       !formData.equipe ||
@@ -110,6 +120,7 @@ function Requests(): JSX.Element {
       if (response.ok) {
         showSuccess("Pedido cadastrado com sucesso!");
         setFormData({
+          title: "",
           data_entrega: "",
           data_retirada: "",
           equipe: "",
@@ -137,6 +148,17 @@ function Requests(): JSX.Element {
       </h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>
         <div className="row mb-3">
+          <Form.Group className="mb-3 mx-auto" controlId="formGridAddress1">
+            <Form.Label>Título</Form.Label>
+            <Form.Control
+              placeholder="Digite o título do Pedido"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              disabled={loading}
+            />
+          </Form.Group>
+
           <Form.Group controlId="formGridDeliveryDate" className="col-6">
             <Form.Label>Data da Entrega</Form.Label>
             <InputGroup className="flex-nowrap">
