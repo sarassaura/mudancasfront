@@ -29,7 +29,7 @@ function Requests(): JSX.Element {
 
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -77,21 +77,6 @@ function Requests(): JSX.Element {
       }));
     }
   }, [takeoutDate]);
-
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      descricao: e.target.value,
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,7 +141,7 @@ function Requests(): JSX.Element {
               placeholder="Digite o título do Pedido"
               name="title"
               value={formData.title}
-              onChange={handleChange}
+              onChange={handleInputChange}
               disabled={loading}
             />
           </Form.Group>
@@ -205,7 +190,7 @@ function Requests(): JSX.Element {
             <Form.Select
               name="equipe"
               value={formData.equipe}
-              onChange={handleSelectChange}
+              onChange={handleInputChange}
               disabled={loading}
             >
               <option value="">Digite a equipe do Pedido</option>
@@ -227,7 +212,7 @@ function Requests(): JSX.Element {
             <Form.Select
               name="veiculo"
               value={formData.veiculo}
-              onChange={handleSelectChange}
+              onChange={handleInputChange}
               disabled={loading}
             >
               <option value="">Digite o veículo do Pedido</option>
@@ -244,8 +229,9 @@ function Requests(): JSX.Element {
           <Form.Control
             as="textarea"
             placeholder="Informações Adicionais"
+            name="descricao"
             value={formData.descricao}
-            onChange={handleTextareaChange}
+            onChange={handleInputChange}
             disabled={loading}
             style={{
               width: "480px",
