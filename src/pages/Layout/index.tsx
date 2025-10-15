@@ -52,7 +52,10 @@ const logoutItemStyle = {
                 <Nav className="me-auto">
                     <Nav.Link style={{ color: '#EC3239' }} as={Link} to="/">Início</Nav.Link>
                     {user?.admin && (
-                        <Nav.Link className="text-dark" as={Link} to="/cadastrar">Cadastrar</Nav.Link>
+                        <>
+                            <Nav.Link className="text-dark" as={Link} to="/cadastrar">Cadastrar</Nav.Link>
+                            <Nav.Link className="text-dark" as={Link} to="/gerenciar">Gerenciar</Nav.Link>
+                        </>
                     )}
                     <Nav.Link className="text-dark" as={Link} to="/pedidos-mudanca">Pedidos de Mudança</Nav.Link>
                     <Nav.Link className="text-dark" as={Link} to="/premiacoes">Premiações</Nav.Link>

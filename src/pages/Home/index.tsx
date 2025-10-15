@@ -7,11 +7,13 @@ function Home(): JSX.Element {
   return (
     <div className="mx-auto d-flex flex-column gap-3">
         {user?.admin && (
-          <ButtonLink url="/cadastrar">Cadastrar</ButtonLink>
+          <>
+            <ButtonLink url="/cadastrar">Cadastrar</ButtonLink>
+            <ButtonLink url="/gerenciar">Gerenciar</ButtonLink>
+          </>
         )}
         <ButtonLink url="/pedidos-mudanca">Pedidos de Mudança</ButtonLink>
         <ButtonLink url="/premiacoes">Premiações</ButtonLink>
-        <ButtonLink url="/gerenciar">Gerenciar</ButtonLink>
     </div>
   )
 }

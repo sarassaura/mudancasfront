@@ -33,8 +33,8 @@ function App() {
             <Route index element={<Home />} />
             <Route path="/premiacoes" element={<Awards />} />
             <Route path="/pedidos-mudanca" element={<DeliveryRequests />} />
-            <Route path="/gerenciar" element={<Manage />} />
             <Route path="/" element={<UnauthorizedEmployee />}>
+              <Route path="/gerenciar" element={<Manage />} />
               <Route path="/cadastrar" element={<Register />} />
               <Route path="/admins" element={<Admins />} />
               <Route path="/funcionarios" element={<Employees />} />
