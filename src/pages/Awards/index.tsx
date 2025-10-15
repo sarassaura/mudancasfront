@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { Form, InputGroup, Pagination, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import html2pdf from 'html2pdf.js'; 
+import html2pdf from "html2pdf.js";
 
 interface Premiacoes {
   _id: string;
@@ -10,7 +10,7 @@ interface Premiacoes {
   autonomo: {
     _id: string;
     nome: string;
-  },
+  };
   pernoite: boolean;
 }
 
@@ -22,25 +22,25 @@ interface AwardEntry {
   overnights: number;
 }
 
-const RED_COLOR = '#Ec3239'; 
+const RED_COLOR = "#Ec3239";
 const jornadaNormalHoras = 150;
 
 const parseDateToLocal = (dateString: string): Date | null => {
-      let yyyy_mm_dd: string;
-      
-      if (dateString.includes('/')) {
-        const parts = dateString.split('/');
-        const d = parts[0].padStart(2, '0');
-        const m = parts[1].padStart(2, '0');
-        const y = parts[2];
-        yyyy_mm_dd = `${y}-${m}-${d}`;
-    } else {
-        yyyy_mm_dd = dateString;
-    }
-      const date = new Date(`${yyyy_mm_dd}T12:00:00`); 
+  let yyyy_mm_dd: string;
 
-      return isNaN(date.getTime()) ? null : date;
+  if (dateString.includes("/")) {
+    const parts = dateString.split("/");
+    const d = parts[0].padStart(2, "0");
+    const m = parts[1].padStart(2, "0");
+    const y = parts[2];
+    yyyy_mm_dd = `${y}-${m}-${d}`;
+  } else {
+    yyyy_mm_dd = dateString;
   }
+  const date = new Date(`${yyyy_mm_dd}T12:00:00`);
+
+  return isNaN(date.getTime()) ? null : date;
+};
 
 const aggregateAwardsData = (data: Premiacoes[]): AwardEntry[] => {
   const aggregated: { [autonomoId: string]: AwardEntry } = {};
@@ -60,7 +60,7 @@ const aggregateAwardsData = (data: Premiacoes[]): AwardEntry[] => {
     }
 
     aggregated[autonomoId].hoursWorked += hours;
-    
+
     if (entry.pernoite) {
       aggregated[autonomoId].overnights += 1;
     }
@@ -83,16 +83,15 @@ const filterAndAggregateData = (
   month: string,
   year: string
 ): AwardEntry[] => {
-
   let filteredData = data;
 
   if (day || month || year) {
-    filteredData = data.filter(entry => {
+    filteredData = data.filter((entry) => {
       const entryDate = parseDateToLocal(entry.data);
       if (!entryDate) return false;
-      
+
       const entryDay = entryDate.getDate().toString();
-      const entryMonth = (entryDate.getMonth() + 1).toString(); 
+      const entryMonth = (entryDate.getMonth() + 1).toString();
       const entryYear = entryDate.getFullYear().toString();
 
       const dayMatch = !day || entryDay === day;
@@ -106,15 +105,15 @@ const filterAndAggregateData = (
   if (!day && !month && !year) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    filteredData = data.filter(entry => {
-      const entryDate = new Date(entry.data.split('/').reverse().join('-'));
+
+    filteredData = data.filter((entry) => {
+      const entryDate = new Date(entry.data.split("/").reverse().join("-"));
       return !isNaN(entryDate.getTime()) && entryDate >= thirtyDaysAgo;
     });
   }
-  
+
   return aggregateAwardsData(filteredData);
-}
+};
 
 function Awards(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -131,24 +130,45 @@ function Awards(): JSX.Element {
   const navigate = useNavigate();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
   ];
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
-  
-  const [sortConfig, setSortConfig] = useState<{ key: keyof AwardEntry; order: "asc" | "desc" }>({
+
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof AwardEntry;
+    order: "asc" | "desc";
+  }>({
     key: "hoursWorked",
     order: "desc",
   });
 
-  const sortData = (dataToSort: AwardEntry[], key: keyof AwardEntry, order: "asc" | "desc"): AwardEntry[] => {
+  const sortData = (
+    dataToSort: AwardEntry[],
+    key: keyof AwardEntry,
+    order: "asc" | "desc"
+  ): AwardEntry[] => {
     return [...dataToSort].sort((a, b) => {
-      if (key === 'hoursWorked' || key === 'extraHours' || key === 'overnights') {
+      if (
+        key === "hoursWorked" ||
+        key === "extraHours" ||
+        key === "overnights"
+      ) {
         const aValue = a[key];
         const bValue = b[key];
         return order === "asc" ? aValue - bValue : bValue - aValue;
       }
-      if (key === 'name') {
+      if (key === "name") {
         const aValue = String(a[key]).toLowerCase();
         const bValue = String(b[key]).toLowerCase();
         if (aValue < bValue) return order === "asc" ? -1 : 1;
@@ -161,7 +181,8 @@ function Awards(): JSX.Element {
 
   const handleSort = (column: keyof AwardEntry) => {
     const isSameColumn = sortConfig.key === column;
-    const newOrder = isSameColumn && sortConfig.order === "asc" ? "desc" : "asc";
+    const newOrder =
+      isSameColumn && sortConfig.order === "asc" ? "desc" : "asc";
 
     const sorted = sortData(allSortedData, column, newOrder);
 
@@ -171,12 +192,17 @@ function Awards(): JSX.Element {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE_URL}/data`) 
-      .then(response => response.json())
+    fetch(`${API_BASE_URL}/data`)
+      .then((response) => response.json())
       .then((data: Premiacoes[]) => {
         setRawData(data);
 
-        const aggregated = filterAndAggregateData(data, selectedDay, selectedMonth, selectedYear);
+        const aggregated = filterAndAggregateData(
+          data,
+          selectedDay,
+          selectedMonth,
+          selectedYear
+        );
 
         const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
 
@@ -188,39 +214,58 @@ function Awards(): JSX.Element {
         console.error("Erro ao buscar premiações:", err);
         setLoading(false);
       });
-  }, [selectedDay, selectedMonth, selectedYear, API_BASE_URL, sortConfig.key, sortConfig.order]);
+  }, [
+    selectedDay,
+    selectedMonth,
+    selectedYear,
+    API_BASE_URL,
+    sortConfig.key,
+    sortConfig.order,
+  ]);
 
   useEffect(() => {
     if (rawData.length > 0) {
-      const aggregated = filterAndAggregateData(rawData, selectedDay, selectedMonth, selectedYear);
-      
+      const aggregated = filterAndAggregateData(
+        rawData,
+        selectedDay,
+        selectedMonth,
+        selectedYear
+      );
+
       const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
-      
+
       setAllSortedData(sorted);
       setCurrentPage(1);
     }
-  }, [selectedDay, selectedMonth, selectedYear, rawData, sortConfig.key, sortConfig.order]);
+  }, [
+    selectedDay,
+    selectedMonth,
+    selectedYear,
+    rawData,
+    sortConfig.key,
+    sortConfig.order,
+  ]);
 
   const handleExportPDF = () => {
     const element = contentRef.current;
     if (!element) return;
-    
+
     const opt = {
       margin: 0,
-      filename: 'premiacoes_filtradas.pdf',
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        scroll: 0, 
+      filename: "premiacoes_filtradas.pdf",
+      image: { type: "jpeg" as const, quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        scroll: 0,
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight + 10,
       },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
-        orientation: 'landscape' as const
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "landscape" as const,
       },
-      pagebreak: { mode: 'avoid-all' }
+      pagebreak: { mode: "avoid-all" },
     };
 
     html2pdf().set(opt).from(element).save();
@@ -228,16 +273,19 @@ function Awards(): JSX.Element {
 
   const paginateAwards = allSortedData;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = paginateAwards.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = paginateAwards.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
   const totalPages = Math.ceil(paginateAwards.length / itemsPerPage);
 
   const renderPaginationItems = () => {
     const items = [];
     for (let number = 1; number <= totalPages; number++) {
       items.push(
-        <Pagination.Item 
-          key={number} 
-          active={number === currentPage} 
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
           onClick={() => setCurrentPage(number)}
         >
           {number}
@@ -257,8 +305,8 @@ function Awards(): JSX.Element {
         className={`bi bi-arrow-${icon} ms-1`}
         style={{
           visibility: iconVisibility,
-          display: 'inline-block',
-          width: '16px',
+          display: "inline-block",
+          width: "16px",
         }}
       ></i>
     );
@@ -267,22 +315,22 @@ function Awards(): JSX.Element {
   if (loading)
     return (
       <div className="text-center p-5">
-        <h2 style={{ color: '#Ec3239' }}>Carregando premiações...</h2>
+        <h2 style={{ color: "#Ec3239" }}>Carregando premiações...</h2>
       </div>
     );
 
   return (
     <div className="w-100 d-flex flex-column" ref={contentRef}>
       <div className="d-flex justify-content-between px-3 px-md-5 pt-4 mb-3">
-        <button 
-          onClick={() => navigate('/')}
+        <button
+          onClick={() => navigate("/")}
           style={{
-            border: 'none', 
-            backgroundColor: 'transparent',
-            color: 'black',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
+            border: "none",
+            backgroundColor: "transparent",
+            color: "black",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
           }}
         >
           <i className="bi bi-arrow-left-circle"></i>
@@ -291,12 +339,12 @@ function Awards(): JSX.Element {
         <button
           onClick={handleExportPDF}
           style={{
-            border: 'none', 
-            backgroundColor: 'transparent', 
-            color: 'black', 
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px', 
+            border: "none",
+            backgroundColor: "transparent",
+            color: "black",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
           }}
         >
           <i className="bi bi-download"></i>
@@ -304,43 +352,69 @@ function Awards(): JSX.Element {
         </button>
       </div>
 
-      <div className="mx-auto w-100 px-3 px-md-5" style={{ maxWidth: '1200px' }} >
-        <h1 className="h1 fw-bold text-center mb-4" style={{ color: '#Ec3239' }}>Premiações</h1>
+      <div
+        className="mx-auto w-100 px-3 px-md-5"
+        style={{ maxWidth: "1200px" }}
+      >
+        <h1
+          className="h1 fw-bold text-center mb-4"
+          style={{ color: "#Ec3239" }}
+        >
+          Premiações
+        </h1>
         <div className="d-flex justify-content-end mb-4">
           <div className="d-flex flex-wrap justify-content-center justify-content-md-end gap-3 w-100 w-md-auto">
-            <InputGroup className="flex-grow-1" style={{ maxWidth: '120px', minWidth: '100px' }}>
+            <InputGroup
+              className="flex-grow-1"
+              style={{ maxWidth: "120px", minWidth: "100px" }}
+            >
               <InputGroup.Text>
-                <i className="bi bi-calendar-day"></i> 
+                <i className="bi bi-calendar-day"></i>
               </InputGroup.Text>
-              <Form.Select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)}>
+              <Form.Select
+                value={selectedDay}
+                onChange={(e) => setSelectedDay(e.target.value)}
+              >
                 <option value="">Dia</option>
-                  {days.map((day) => (
-                <option key={day} value={day}>
-                  {day}
-                </option>
-              ))}
+                {days.map((day) => (
+                  <option key={day} value={day}>
+                    {day}
+                  </option>
+                ))}
               </Form.Select>
             </InputGroup>
 
-            <InputGroup className="flex-grow-1" style={{ maxWidth: '130px', minWidth: '120px' }}>
+            <InputGroup
+              className="flex-grow-1"
+              style={{ maxWidth: "130px", minWidth: "120px" }}
+            >
               <InputGroup.Text>
                 <i className="bi bi-calendar-month"></i>
               </InputGroup.Text>
-              <Form.Select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+              <Form.Select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
                 <option value="">Mês</option>
-                  {months.map((month, index) => (
-                <option key={month} value={index + 1}>
-                  {month}
-                </option>
-              ))}
+                {months.map((month, index) => (
+                  <option key={month} value={index + 1}>
+                    {month}
+                  </option>
+                ))}
               </Form.Select>
             </InputGroup>
 
-            <InputGroup className="flex-grow-1" style={{ maxWidth: '130px', minWidth: '120px' }}>
+            <InputGroup
+              className="flex-grow-1"
+              style={{ maxWidth: "130px", minWidth: "120px" }}
+            >
               <InputGroup.Text>
                 <i className="bi bi-calendar-date"></i>
               </InputGroup.Text>
-              <Form.Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+              <Form.Select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+              >
                 <option value="">Ano</option>
                 {years.map((year) => (
                   <option key={year} value={year}>
@@ -356,20 +430,27 @@ function Awards(): JSX.Element {
           <thead>
             <tr>
               <th>#</th>
-              <th style={{ cursor: 'pointer' }} onClick={() => handleSort("name")}>
+              <th
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("name")}
+              >
                 Nome
                 {renderSortIcon("name")}
               </th>
-              <th style={{ cursor: 'pointer' }} onClick={() => handleSort("hoursWorked")}> 
-                Horas Trabalhadas 
+              <th
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("hoursWorked")}
+              >
+                Horas Trabalhadas
                 {renderSortIcon("hoursWorked")}
               </th>
               <th
                 style={{ cursor: "pointer" }}
-                onClick={() => handleSort("extraHours")}>
-                  Horas Extras
-                  {renderSortIcon("extraHours")}
-                </th>
+                onClick={() => handleSort("extraHours")}
+              >
+                Horas Extras
+                {renderSortIcon("extraHours")}
+              </th>
               <th
                 style={{ cursor: "pointer" }}
                 onClick={() => handleSort("overnights")}
@@ -393,7 +474,7 @@ function Awards(): JSX.Element {
         </Table>
 
         <div className="d-flex justify-content-center mb-5">
-          <Pagination size="lg"> 
+          <Pagination size="lg">
             <Pagination.Prev
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
@@ -409,7 +490,7 @@ function Awards(): JSX.Element {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default Awards;

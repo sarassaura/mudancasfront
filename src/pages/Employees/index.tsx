@@ -33,9 +33,7 @@ function Employees(): JSX.Element {
   useEffect(() => {
     const fetchEquipes = async () => {
       try {
-        const equipesResponse = await fetch(
-          `${API_BASE_URL}/equipes`
-        );
+        const equipesResponse = await fetch(`${API_BASE_URL}/equipes`);
         const equipesData = await equipesResponse.json();
         setEquipes(equipesData);
       } catch (error) {
@@ -92,7 +90,7 @@ function Employees(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>
+      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
         Cadastro de Funcionário
       </h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>

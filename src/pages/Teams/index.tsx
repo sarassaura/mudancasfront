@@ -64,7 +64,7 @@ function Teams(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>
+      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
         Cadastro de Equipe
       </h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>
