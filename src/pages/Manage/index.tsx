@@ -8,7 +8,6 @@ interface Section {
   title: string;
   rows: { value: string, isActive?: boolean }[];
   isPedido?: boolean;
-  summary?: { label: string; value: string }[];
 }
 
 function Manage(): JSX.Element {
@@ -72,11 +71,6 @@ function Manage(): JSX.Element {
     {
       title: "Pedidos",
       isPedido: true,
-      summary: [
-        { label: "Finalizados", value: "58" },
-        { label: "Em andamento", value: "7" },
-        { label: "Cancelados", value: "3" },
-      ],
       rows: [
         { value: "Mudança X", isActive: true },
         { value: "Mudança Y", isActive: true },
@@ -178,20 +172,6 @@ function Manage(): JSX.Element {
                   {section.title}
                 </th>
               </tr>
-
-              {openSection === section.title && section.isPedido && section.summary && (
-                <tr>
-                  <td className="ps-5">
-                    <div className="w-100 d-flex justify-content-between">
-                      {section.summary.map((s) => (
-                        <span key={s.label} className="text-center flex-grow-1">
-                          <strong>{s.label}:</strong> {s.value}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              )}
 
               {openSection === section.title &&
                 section.rows
