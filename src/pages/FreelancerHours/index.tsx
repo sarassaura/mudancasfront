@@ -87,7 +87,7 @@ const DayRow = ({
 );
 
 function FreelancerHours(): JSX.Element {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
     { id: 1, date: null, hours: 3, overnight: false },

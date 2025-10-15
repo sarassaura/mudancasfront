@@ -9,7 +9,7 @@ import type { DadosPedido, Equipe, Veiculo } from "../../types";
 import CustomButton from "../../components/CustomButton";
 
 function Requests(): JSX.Element {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
   const navigate = useNavigate();
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
   const [takeoutDate, setTakeoutDate] = useState<Date | null>(null);

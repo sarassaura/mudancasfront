@@ -80,7 +80,7 @@ const filterPedidos = (
 };
 
 function DeliveryRequests(): JSX.Element {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
   const contentRef = useRef<HTMLDivElement>(null)
   const [rawData, setRawData] = useState<Pedidos[]>([]);
   const [allFilteredPedidos, setAllFilteredPedidos] = useState<Pedidos[]>([]);

@@ -9,7 +9,7 @@ import CustomButton from "../../components/CustomButton";
 type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 function Vehicles(): JSX.Element {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<DadosVeiculo>({
