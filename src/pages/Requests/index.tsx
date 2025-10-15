@@ -21,6 +21,7 @@ function Requests(): JSX.Element {
     equipe: "",
     veiculo: "",
     descricao: "",
+    status: "Em Andamento",
   });
 
   const [equipes, setEquipes] = useState<Equipe[]>([]);
@@ -29,12 +30,19 @@ function Requests(): JSX.Element {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const { name, value } = e.target;
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-};
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      status: e.target.value,
+    }));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -126,6 +134,7 @@ function Requests(): JSX.Element {
           equipe: "",
           veiculo: "",
           descricao: "",
+          status: "Em Andamento",
         });
         setDeliveryDate(null);
         setTakeoutDate(null);
@@ -142,7 +151,7 @@ function Requests(): JSX.Element {
   };
 
   return (
-    <div className="mx-auto d-flex flex-column">
+    <div className="mx-auto d-flex flex-column mt-4 mb-4">
       <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
         Cadastro de Pedidos
       </h1>
@@ -251,6 +260,25 @@ function Requests(): JSX.Element {
               resize: "none",
             }}
           />
+        </Form.Group>
+
+        <Form.Group className="mb-3" controlId="formGridStatus">
+          <Form.Label>Status do Pedido</Form.Label>
+          <div className="d-flex justify-content-between">
+            {['Finalizado', 'Em Andamento', 'Cancelado'].map((statusOption) => (
+              <Form.Check
+                key={statusOption}
+                type="radio"
+                id={`status-${statusOption}`}
+                label={statusOption}
+                name="status"
+                value={statusOption}
+                checked={formData.status === statusOption}
+                onChange={handleStatusChange}
+                disabled={loading}
+              />
+            ))}
+          </div>
         </Form.Group>
 
         <div className="row mb-3 d-flex flex-col">
