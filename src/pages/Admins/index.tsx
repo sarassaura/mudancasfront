@@ -7,7 +7,7 @@ import type { DadosAdmin } from "../../types";
 import CustomButton from "../../components/CustomButton";
 
 function Admins(): JSX.Element {
-  const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const navigate = useNavigate();
   const [formData, setFormData] = useState<DadosAdmin>({
@@ -62,7 +62,9 @@ function Admins(): JSX.Element {
 
   return (
     <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-center" style={{ color: '#Ec3239' }}>Cadastro de Admin</h1>
+      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
+        Cadastro de Admin
+      </h1>
       <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="formGridAddress1">
           <Form.Label>Nome</Form.Label>
