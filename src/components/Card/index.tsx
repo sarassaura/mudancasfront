@@ -9,12 +9,23 @@ interface RequestCardProps {
   vehicle: string;
   description: string;
   onEdit: (id: string) => void;
-  onInactivate: () => void;
+  onInactivate: (id: string, currentStatus: boolean) => void;
   isActive?: boolean; 
   pedidoId: string;
 }
 
-function RequestCard({ title, team, startDate, endDate, vehicle, description, onEdit, onInactivate, isActive, pedidoId }: RequestCardProps): JSX.Element {
+function RequestCard({ 
+  title, 
+  team, 
+  startDate, 
+  endDate, 
+  vehicle, 
+  description, 
+  onEdit, 
+  onInactivate, 
+  isActive = true, 
+  pedidoId 
+}: RequestCardProps): JSX.Element {
   const descriptionStyle = {
     overflow: 'hidden',
     display: '-webkit-box',
@@ -22,56 +33,65 @@ function RequestCard({ title, team, startDate, endDate, vehicle, description, on
     WebkitBoxOrient: 'vertical' as const,
   };
 
-  return (
-    <div 
-      style={{ 
-        border: '1px solid #DEE2E6', 
-        borderRadius: '12px', 
-        padding: '24px', 
-        width: '350px'
-      }}
-      className={isActive ? "" : "opacity-75 border-secondary"}
-    >
-      <Card.Title className="fw-bold mb-4">
-        {title}
-      </Card.Title>
+  const cardStyle = {
+    border: isActive ? '1px solid #DEE2E6' : '1px solid #ced4da',
+    borderRadius: '12px', 
+    padding: '24px', 
+    width: '350px',
+    backgroundColor: isActive ? 'white' : '#f5f5f5',
+    opacity: isActive ? 1 : 0.85,
+    transition: 'all 0.3s ease',
+    display: 'flex',              
+    flexDirection: 'column' as const,
+    justifyContent: 'space-between',
+  };
 
-      <div className="d-flex justify-content-between mb-4">
-        <span className="text-secondary">
-          Início: <span className="text-secondary">{startDate}</span>
-        </span>
-        <span className="text-secondary">
-          Fim: <span className="text-secondary">{endDate}</span>
-        </span>
+  return (
+    <div style={cardStyle}>
+      <div>
+        <Card.Title className="fw-bold mb-4">
+          {title}
+          {!isActive && <i className="bi bi-x-circle-fill text-danger ms-2" title="Inativo"></i>}
+        </Card.Title>
+
+        <div className="d-flex justify-content-between mb-4">
+          <span className="text-secondary">
+            Início: <span className="text-secondary">{startDate}</span>
+          </span>
+          <span className="text-secondary">
+            Fim: <span className="text-secondary">{endDate}</span>
+          </span>
+        </div>
+
+        <p className="mb-3 text-secondary">
+          Equipe: <span className="text-secondary">{team}</span>
+        </p>
+
+        <p className="mb-3 text-secondary">
+          Veículo: <span className="text-secondary">{vehicle}</span>
+        </p>
+
+        <Card.Text className="text-secondary" style={descriptionStyle}>
+          Descrição: {description || "Nenhuma descrição fornecida."}
+        </Card.Text>
       </div>
 
-      <p className="mb-3 text-secondary">
-        Equipe: <span className="text-secondary">{team}</span>
-      </p>
-
-      <p className="mb-3 text-secondary">
-        Veículo: <span className="text-secondary">{vehicle}</span>
-      </p>
-
-      <Card.Text className="text-secondary" style={descriptionStyle}>
-        Descrição: {description || "Nenhuma descrição fornecida."}
-      </Card.Text>
-
-      <div className="d-flex justify-content-between gap-2">
+      <div className="d-flex justify-content-between gap-2 mt-3">
         <Button 
           variant="outline-primary" 
           size="sm" 
-          onClick={() => onEdit(pedidoId)}      
+          onClick={() => onEdit(pedidoId)}
+          disabled={!isActive}    
         >
           <i className="bi bi-pencil-square me-1"></i> Editar
         </Button>
         <Button 
           variant={isActive ? "outline-danger" : "outline-success"} 
           size="sm" 
-          onClick={onInactivate}
+          onClick={() => onInactivate(pedidoId, isActive)}
         >
           <i className={`bi ${isActive ? "bi-x-circle" : "bi-check-circle"} me-1`}></i> 
-          {isActive ? 'Reativar' : 'Inativar'}
+          {isActive ? 'Inativar' : 'Reativar'}
         </Button>
       </div>
     </div>

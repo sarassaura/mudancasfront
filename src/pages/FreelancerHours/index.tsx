@@ -26,24 +26,26 @@ const DayRow = ({
     value: Date | null | number | boolean
   ) => void;
 }) => (
-  <div className="row mb-3 d-flex flex-col" key={entry.id}>
-    <Form.Group controlId={`date-${entry.id}`} className="col-5 mx-auto">
+  <div className="row mb-3 g-3 align-items-end justify-content-center text-center" key={entry.id}>
+    <Form.Group controlId={`date-${entry.id}`} className="col-12 col-md-5">
       <Form.Label>Data</Form.Label>
-      <InputGroup>
+      <InputGroup className="d-flex justify-content-center justify-content-md-start">
         <InputGroup.Text>
           <i className="bi bi-calendar-week"></i>
         </InputGroup.Text>
-        <DatePicker
-          selected={entry.date}
-          onChange={(date) => updateEntry(entry.id, "date", date)}
-          dateFormat="dd/MM/yyyy"
-          className="form-control rounded-start-0"
-          placeholderText="dd/mm/aaaa"
-        />
+        <div className="col-md-8">
+          <DatePicker
+            selected={entry.date}
+            onChange={(date) => updateEntry(entry.id, "date", date)}
+            dateFormat="dd/MM/yyyy"
+            className="form-control rounded-start-0 w-100"
+            placeholderText="dd/mm/aaaa"
+          />
+        </div>
       </InputGroup>
     </Form.Group>
 
-    <Form.Group controlId={`hours-${entry.id}`} className="col-4 mx-auto">
+    <Form.Group controlId={`hours-${entry.id}`} className="col-12 col-md-4">
       <Form.Label>Horas no dia</Form.Label>
       <InputGroup>
         <Button
@@ -73,7 +75,7 @@ const DayRow = ({
 
     <Form.Group
       controlId={`overnight-${entry.id}`}
-      className="col-3 d-flex flex-column align-items-center"
+      className="col-12 col-md-3 d-flex flex-column align-items-center"
     >
       <Form.Label>Pernoite?</Form.Label>
       <Form.Check
@@ -188,12 +190,12 @@ function FreelancerHours(): JSX.Element {
   };
 
   return (
-    <div className="mx-auto d-flex flex-column mt-4 mb-4">
-      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
+    <div className="container my-auto">
+      <h1 className="h1 fw-bold text-center w-100 mt-3" style={{ color: "#Ec3239" }}>
         Cadastro de Horas Autônomos
       </h1>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3" controlId="formGridAddress1">
+      <Form className="mx-auto w-100" style={{ maxWidth: "480px" }} onSubmit={handleSubmit}>
+        <Form.Group className="mb-3 mx-auto" controlId="formGridAddress1">
           <Form.Label>Nome</Form.Label>
           <InputGroup>
             <InputGroup.Text>
@@ -230,7 +232,7 @@ function FreelancerHours(): JSX.Element {
           </Button>
         </div>
 
-        <div className="row mb-3 d-flex flex-col">
+        <div className="row mb-3 d-flex flex-col gap-3">
           <CustomButton
             type="button"
             className="col-6 mx-auto"
