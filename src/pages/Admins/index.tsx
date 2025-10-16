@@ -61,11 +61,11 @@ function Admins(): JSX.Element {
   };
 
   return (
-    <div className="mx-auto d-flex flex-column">
-      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
+    <div className="container my-auto">
+      <h1 className="h1 fw-bold text-center w-100 mt-3" style={{ color: "#Ec3239" }}>
         Cadastro de Admin
       </h1>
-      <Form style={{ width: "480px", margin: "auto" }} onSubmit={handleSubmit}>
+      <Form className="mx-auto w-100" style={{ maxWidth: "480px" }} onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="formGridAddress1">
           <Form.Label>Nome</Form.Label>
           <InputGroup>
@@ -116,7 +116,7 @@ function Admins(): JSX.Element {
           </InputGroup>
         </Form.Group>
 
-        <div className="row mb-3 d-flex flex-col">
+        <div className="row mb-3 d-flex flex-col gap-3">
           <CustomButton
             type="button"
             className="col-6 mx-auto"

@@ -92,11 +92,11 @@ function Login(): JSX.Element {
   };
 
   return (
-    <div className="m-auto d-flex flex-column container">
-      <h1 className="h1 fw-bold text-center" style={{ color: "#Ec3239" }}>
+    <div className="container my-auto">
+      <h1 className="h1 fw-bold text-center w-100" style={{ color: "#Ec3239" }}>
         Entrar no sistema
       </h1>
-      <Form style={{ width: "480px", margin: "auto" }}>
+      <Form className="mx-auto w-100" style={{ maxWidth: "480px" }}>
         <Form.Group className="mb-3" controlId="formGridAddress1">
           <Form.Label>Email</Form.Label>
           <InputGroup>

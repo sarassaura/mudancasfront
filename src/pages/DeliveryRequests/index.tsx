@@ -18,6 +18,7 @@ interface Pedidos {
     nome: string;
   };
   descricao?: string;
+  isActive?: boolean;
 }
 
 const parseDateToLocal = (dateString: string): Date | null => {
@@ -79,6 +80,31 @@ const filterPedidos = (
   return filteredData;
 };
 
+const sortPedidos = (data: Pedidos[]): Pedidos[] => {
+  return [...data].sort((a, b) => {
+    const aIsActive = a.isActive !== false;
+    const bIsActive = b.isActive !== false;
+
+    if (aIsActive && !bIsActive) {
+      return -1;
+    }
+    if (!aIsActive && bIsActive) {
+      return 1;
+    }
+    if (aIsActive === bIsActive) {
+      const dateA = parseDateToLocal(a.data_entrega);
+      const dateB = parseDateToLocal(b.data_entrega);
+
+      if (!dateA && dateB) return 1;
+      if (dateA && !dateB) return -1;
+      if (!dateA && !dateB) return 0;
+
+      return dateA!.getTime() - dateB!.getTime();
+    }
+    return 0;
+  });
+};
+
 function DeliveryRequests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const contentRef = useRef<HTMLDivElement>(null)
@@ -109,8 +135,20 @@ function DeliveryRequests(): JSX.Element {
   ];
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleEditRequest = (_id: string) => {
     navigate(`/pedidos`); 
+  };
+
+  const handleInactivateRequest = (id: string, currentStatus: boolean) => {
+    setRawData(prevData =>
+      prevData.map(pedido => {
+        if (pedido._id === id) {
+          return { ...pedido, isActive: !currentStatus }; 
+        }
+        return pedido;
+      })
+    );
   };
 
   useEffect(() => {
@@ -118,23 +156,15 @@ function DeliveryRequests(): JSX.Element {
     fetch(`${API_BASE_URL}/pedidos`)
       .then((response) => response.json())
       .then((data: Pedidos[]) => {
-        setRawData(data);
-
-        const initialFiltered = filterPedidos(
-          data,
-          selectedDay,
-          selectedMonth,
-          selectedYear
-        );
-        setAllFilteredPedidos(initialFiltered);
-        setCurrentPage(1);
+        const dataWithStatus = data.map(p => ({ ...p, isActive: p.isActive !== false }));
+        setRawData(dataWithStatus);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Erro ao buscar pedidos:", err);
         setLoading(false);
       });
-  }, [API_BASE_URL, selectedDay, selectedMonth, selectedYear]);
+  }, [API_BASE_URL]);
 
   useEffect(() => {
     const newFiltered = filterPedidos(
@@ -144,7 +174,9 @@ function DeliveryRequests(): JSX.Element {
       selectedYear
     );
 
-    setAllFilteredPedidos(newFiltered);
+    const sortedFiltered = sortPedidos(newFiltered);
+
+    setAllFilteredPedidos(sortedFiltered);
     setCurrentPage(1);
   }, [rawData, selectedDay, selectedMonth, selectedYear]);
 
@@ -316,14 +348,15 @@ function DeliveryRequests(): JSX.Element {
               <RequestCard 
                 key={pedido._id}
                 pedidoId={pedido._id}
-                title={pedido.title}
+                title={pedido.title || 'Pedido Sem Título'}
                 team={pedido.equipe.nome}
                 startDate={pedido.data_entrega}
                 endDate={pedido.data_retirada}
                 vehicle={pedido.veiculo.nome}
                 description={pedido.descricao ?? ''}
                 onEdit={() => handleEditRequest(pedido._id)} 
-                onInactivate={() => {}}
+                onInactivate={handleInactivateRequest}
+                isActive={pedido.isActive}
               />
             ))
           }

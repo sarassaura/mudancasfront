@@ -105,14 +105,23 @@ function Manage(): JSX.Element {
     }
   };
 
-  const handleInactivationPrompt = (value: string, sectionTitle: string) => {
-    setItemToInactivate({ value, sectionTitle });
-    setShowInactivationModal(true);
-  };
-
   const handleCloseModal = () => {
     setShowInactivationModal(false);
     setItemToInactivate(null);
+  };
+
+  const handleReactivate = (value: string, sectionTitle: string) => {
+    setSectionsData(prevData => prevData.map(section => {
+      if (section.title === sectionTitle) {
+        return {
+          ...section,
+          rows: section.rows.map(row => 
+            row.value === value ? { ...row, isActive: true } : row
+          ),
+        };
+      }
+      return section;
+    }));
   };
 
   const confirmInactivation = () => {
@@ -136,7 +145,16 @@ function Manage(): JSX.Element {
 
     showSuccess(`"${itemToInactivate.value}" inativado com sucesso!`);
     handleCloseModal();
-  };                                     
+  };
+  
+  const handleInactivationPrompt = (row: { value: string, isActive?: boolean }, sectionTitle: string) => {
+    if (row.isActive === false) {
+      handleReactivate(row.value, sectionTitle);
+    } else {
+      setItemToInactivate({ value: row.value, sectionTitle });
+      setShowInactivationModal(true);
+    }
+  };
 
   return (
     <div className="w-100 d-flex flex-column">
@@ -178,9 +196,9 @@ function Manage(): JSX.Element {
                   .sort((a, b) => (a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1)) 
                   .map((row, idx) => (
                   <tr key={`${section.title}-${idx}`} style={{ opacity: row.isActive === false ? 0.6 : 1 }}>
-                    <td className="ps-5">
+                    <td className="ps-3 ps-sm-5">
                       <div className="d-flex justify-content-between align-items-center w-100">
-                        <span>
+                        <span className="me-2">
                           {row.value}
                           {row.isActive === false && <i className="bi bi-x-circle-fill text-danger ms-2" title="Inativo"></i>}
                         </span>
@@ -188,6 +206,7 @@ function Manage(): JSX.Element {
                           <Button
                             variant="outline-primary"
                             size="sm"
+                            disabled={row.isActive === false}
                             onClick={() => handleEdit(row.value, section.title)}
                           >
                             Editar
@@ -195,7 +214,7 @@ function Manage(): JSX.Element {
                           <Button
                             variant={row.isActive === false ? "outline-success" : "outline-danger"}
                             size="sm"
-                            onClick={() => handleInactivationPrompt(row.value, section.title)}
+                            onClick={() => handleInactivationPrompt(row, section.title)}
                           >
                             {row.isActive === false ? 'Reativar' : 'Inativar'}
                           </Button>
@@ -223,7 +242,7 @@ function Manage(): JSX.Element {
             Cancelar
           </Button>
           <Button variant="danger" onClick={confirmInactivation} disabled={false}>
-            Sim, Excluir
+            Sim, Inativar
           </Button>
         </Modal.Footer>
       </Modal>
