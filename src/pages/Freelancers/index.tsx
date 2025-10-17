@@ -1,6 +1,6 @@
-import { type JSX, useState } from "react";
+import { type JSX, useState, useEffect } from "react";
 import { Form, InputGroup } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { showError } from "../../components/ToastAlerts/ShowError";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type { DadosAutonomo } from "../../types";
@@ -11,12 +11,45 @@ type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 function Freelancers(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
+  const location = useLocation();
+  const editId = location.state?.editId;
+  const isEditMode = Boolean(editId);
 
   const [formData, setFormData] = useState<DadosAutonomo>({
     nome: "",
+    status: "ativo",
   });
 
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+
+  useEffect(() => {
+    const fetchAutonomoData = async () => {
+      if (isEditMode && editId) {
+        setFetching(true);
+        try {
+          const response = await fetch(`${API_BASE_URL}/autonomos/${editId}`);
+
+          if (!response.ok) {
+            throw new Error("Erro ao carregar dados do autônomo");
+          }
+
+          const autonomoData = await response.json();
+          setFormData({
+            nome: autonomoData.nome || "",
+            status: autonomoData.status || "ativo",
+          });
+        } catch (error) {
+          showError("Erro ao carregar dados para edição");
+          console.error("Erro:", error);
+        } finally {
+          setFetching(false);
+        }
+      }
+    };
+
+    fetchAutonomoData();
+  }, [isEditMode, editId, API_BASE_URL]);
 
   const handleChange = (e: React.ChangeEvent<FormElement>) => {
     const { name, value } = e.target;
@@ -37,22 +70,40 @@ function Freelancers(): JSX.Element {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/autonomos`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      let response;
 
-      if (response.ok) {
-        showSuccess("Autônomo cadastrado com sucesso!");
-        setFormData({
-          nome: "",
+      if (isEditMode) {
+        response = await fetch(`${API_BASE_URL}/autonomos/${editId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
         });
       } else {
+        response = await fetch(`${API_BASE_URL}/autonomos`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+      }
+
+      if (response.ok) {
+        showSuccess(
+          isEditMode
+            ? "Autônomo atualizado com sucesso!"
+            : "Autônomo cadastrado com sucesso!"
+        );
+
+        navigate("/gerenciar");
+      } else {
         const errorData = await response.json();
-        showError(errorData.message || "Erro ao cadastrar autônomo");
+        showError(
+          errorData.message ||
+            `Erro ao ${isEditMode ? "atualizar" : "cadastrar"} autônomo`
+        );
       }
     } catch (error) {
       console.error(error);
@@ -62,12 +113,38 @@ function Freelancers(): JSX.Element {
     }
   };
 
+  const handleBack = () => {
+    if (location.state?.fromManage || isEditMode) {
+      navigate("/gerenciar");
+    } else {
+      navigate("/cadastrar");
+    }
+  };
+
+  if (fetching) {
+    return (
+      <div className="container my-auto text-center">
+        <div className="spinner-border text-danger" role="status">
+          <span className="visually-hidden">Carregando...</span>
+        </div>
+        <p className="mt-2">Carregando dados...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container my-auto">
-      <h1 className="h1 fw-bold text-center w-100 mt-3" style={{ color: "#Ec3239" }}>
-        Cadastro de Profissional Autônomo
+      <h1
+        className="h1 fw-bold text-center w-100 mt-3"
+        style={{ color: "#Ec3239" }}
+      >
+        {isEditMode ? "Editar Autônomo" : "Cadastro de Profissional Autônomo"}
       </h1>
-      <Form className="mx-auto w-100" style={{ maxWidth: "480px" }} onSubmit={handleSubmit}>
+      <Form
+        className="mx-auto w-100"
+        style={{ maxWidth: "480px" }}
+        onSubmit={handleSubmit}
+      >
         <Form.Group className="mb-3 mx-auto" controlId="formGridAddress1">
           <Form.Label>Nome</Form.Label>
           <InputGroup>
@@ -79,7 +156,7 @@ function Freelancers(): JSX.Element {
               name="nome"
               value={formData.nome}
               onChange={handleChange}
-              disabled={loading}
+              disabled={loading || fetching}
             />
           </InputGroup>
         </Form.Group>
@@ -88,8 +165,8 @@ function Freelancers(): JSX.Element {
           <CustomButton
             type="button"
             className="col-6 mx-auto"
-            onClick={() => navigate("/cadastrar")}
-            disabled={loading}
+            onClick={handleBack}
+            disabled={loading || fetching}
             isOutline
           >
             Voltar
@@ -97,9 +174,15 @@ function Freelancers(): JSX.Element {
           <CustomButton
             type="submit"
             className="col-6 mx-auto"
-            disabled={loading}
+            disabled={loading || fetching}
           >
-            {loading ? "Cadastrando..." : "Salvar"}
+            {loading
+              ? isEditMode
+                ? "Atualizando..."
+                : "Cadastrando..."
+              : isEditMode
+              ? "Atualizar"
+              : "Salvar"}
           </CustomButton>
         </div>
       </Form>

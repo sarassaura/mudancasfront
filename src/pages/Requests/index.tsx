@@ -1,6 +1,6 @@
 import { useState, type JSX, useEffect } from "react";
 import { Form, InputGroup } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { showError } from "../../components/ToastAlerts/ShowError";
@@ -11,25 +11,84 @@ import CustomButton from "../../components/CustomButton";
 function Requests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
+  const location = useLocation();
+  const editId = location.state?.editId;
+  const isEditMode = Boolean(editId);
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
   const [takeoutDate, setTakeoutDate] = useState<Date | null>(null);
 
   const [formData, setFormData] = useState<DadosPedido>({
-    title: "",
+    titulo: "",
     data_entrega: "",
     data_retirada: "",
     equipe: "",
     veiculo: "",
     descricao: "",
-    status: "Em Andamento",
+    status: "em-andamento",
   });
 
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
 
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    const fetchPedidoData = async () => {
+      if (isEditMode && editId) {
+        setFetching(true);
+        try {
+          const response = await fetch(`${API_BASE_URL}/pedidos/${editId}`);
+
+          if (!response.ok) {
+            throw new Error("Erro ao carregar dados do pedido");
+          }
+
+          const pedidoData = await response.json();
+
+          setFormData({
+            titulo: pedidoData.titulo || "",
+            data_entrega: pedidoData.data_entrega || "",
+            data_retirada: pedidoData.data_retirada || "",
+            equipe: pedidoData.equipe?._id || pedidoData.equipe || "",
+            veiculo: pedidoData.veiculo?._id || pedidoData.veiculo || "",
+            descricao: pedidoData.descricao || "",
+            status: pedidoData.status || "em-andamento",
+          });
+        } catch (error) {
+          showError("Erro ao carregar dados para edição");
+          console.error("Erro:", error);
+        } finally {
+          setFetching(false);
+        }
+      }
+    };
+
+    fetchPedidoData();
+  }, [isEditMode, editId, API_BASE_URL]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const equipesResponse = await fetch(`${API_BASE_URL}/equipes`);
+        const equipesData = await equipesResponse.json();
+        setEquipes(equipesData);
+
+        const veiculosResponse = await fetch(`${API_BASE_URL}/veiculos`);
+        const veiculosData = await veiculosResponse.json();
+        setVeiculos(veiculosData);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
+    };
+    fetchData();
+  }, [API_BASE_URL]);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -64,7 +123,7 @@ function Requests(): JSX.Element {
     if (deliveryDate) {
       setFormData((prev) => ({
         ...prev,
-        data_entrega: formatDateToString(deliveryDate), // ← FORMATO dd/mm/aaaa
+        data_entrega: formatDateToString(deliveryDate),
       }));
     }
   }, [deliveryDate]);
@@ -73,7 +132,7 @@ function Requests(): JSX.Element {
     if (takeoutDate) {
       setFormData((prev) => ({
         ...prev,
-        data_retirada: formatDateToString(takeoutDate), // ← FORMATO dd/mm/aaaa
+        data_retirada: formatDateToString(takeoutDate),
       }));
     }
   }, [takeoutDate]);
@@ -83,7 +142,7 @@ function Requests(): JSX.Element {
     setLoading(true);
 
     if (
-      !formData.title ||
+      !formData.titulo ||
       !formData.data_entrega ||
       !formData.data_retirada ||
       !formData.equipe ||
@@ -95,30 +154,40 @@ function Requests(): JSX.Element {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/pedidos`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      let response;
+
+      if (isEditMode) {
+        response = await fetch(`${API_BASE_URL}/pedidos/${editId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+      } else {
+        response = await fetch(`${API_BASE_URL}/pedidos`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+      }
 
       if (response.ok) {
-        showSuccess("Pedido cadastrado com sucesso!");
-        setFormData({
-          title: "",
-          data_entrega: "",
-          data_retirada: "",
-          equipe: "",
-          veiculo: "",
-          descricao: "",
-          status: "Em Andamento",
-        });
-        setDeliveryDate(null);
-        setTakeoutDate(null);
+        showSuccess(
+          isEditMode
+            ? "Pedido atualizado com sucesso!"
+            : "Pedido cadastrado com sucesso!"
+        );
+
+        navigate("/gerenciar");
       } else {
         const errorData = await response.json();
-        showError(errorData.message || "Erro ao cadastrar pedido");
+        showError(
+          errorData.message ||
+            `Erro ao ${isEditMode ? "atualizar" : "cadastrar"} pedido`
+        );
       }
     } catch (error) {
       showError("Erro de conexão com o servidor.");
@@ -128,21 +197,47 @@ function Requests(): JSX.Element {
     }
   };
 
+  const handleBack = () => {
+    if (location.state?.fromManage || isEditMode) {
+      navigate("/gerenciar");
+    } else {
+      navigate("/cadastrar");
+    }
+  };
+
+  if (fetching) {
+    return (
+      <div className="container my-auto text-center">
+        <div className="spinner-border text-danger" role="status">
+          <span className="visually-hidden">Carregando...</span>
+        </div>
+        <p className="mt-2">Carregando dados...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container my-auto">
-      <h1 className="h1 fw-bold text-center w-100 mt-3" style={{ color: "#Ec3239" }}>
-        Cadastro de Pedidos
+      <h1
+        className="h1 fw-bold text-center w-100 mt-3"
+        style={{ color: "#Ec3239" }}
+      >
+        {isEditMode ? "Editar Pedido" : "Cadastro de Pedidos"}
       </h1>
-      <Form className="mx-auto w-100" style={{ maxWidth: "480px" }} onSubmit={handleSubmit}>
+      <Form
+        className="mx-auto w-100"
+        style={{ maxWidth: "480px" }}
+        onSubmit={handleSubmit}
+      >
         <div className="row mb-3">
           <Form.Group className="mb-3 mx-auto" controlId="formGridAddress1">
             <Form.Label>Título</Form.Label>
             <Form.Control
               placeholder="Digite o título do Pedido"
-              name="title"
-              value={formData.title}
+              name="titulo"
+              value={formData.titulo}
               onChange={handleInputChange}
-              disabled={loading}
+              disabled={loading || fetching}
             />
           </Form.Group>
 
@@ -158,7 +253,7 @@ function Requests(): JSX.Element {
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0"
                 placeholderText="dd/mm/aaaa"
-                disabled={loading}
+                disabled={loading || fetching}
               />
             </InputGroup>
           </Form.Group>
@@ -175,7 +270,7 @@ function Requests(): JSX.Element {
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0"
                 placeholderText="dd/mm/aaaa"
-                disabled={loading}
+                disabled={loading || fetching}
               />
             </InputGroup>
           </Form.Group>
@@ -191,7 +286,7 @@ function Requests(): JSX.Element {
               name="equipe"
               value={formData.equipe}
               onChange={handleInputChange}
-              disabled={loading}
+              disabled={loading || fetching}
             >
               <option value="">Digite a equipe do Pedido</option>
               {equipes.map((equipe) => (
@@ -213,7 +308,7 @@ function Requests(): JSX.Element {
               name="veiculo"
               value={formData.veiculo}
               onChange={handleInputChange}
-              disabled={loading}
+              disabled={loading || fetching}
             >
               <option value="">Digite o veículo do Pedido</option>
               {veiculos.map((veiculo) => (
@@ -232,7 +327,7 @@ function Requests(): JSX.Element {
             name="descricao"
             value={formData.descricao}
             onChange={handleInputChange}
-            disabled={loading}
+            disabled={loading || fetching}
             style={{
               width: "100%",
               minHeight: "114px",
@@ -245,8 +340,8 @@ function Requests(): JSX.Element {
           <CustomButton
             type="button"
             className="col-6 mx-auto"
-            onClick={() => navigate("/cadastrar")}
-            disabled={loading}
+            onClick={handleBack}
+            disabled={loading || fetching}
             isOutline
           >
             Voltar
@@ -254,9 +349,15 @@ function Requests(): JSX.Element {
           <CustomButton
             type="submit"
             className="col-6 mx-auto"
-            disabled={loading}
+            disabled={loading || fetching}
           >
-            {loading ? "Cadastrando..." : "Salvar"}
+            {loading
+              ? isEditMode
+                ? "Atualizando..."
+                : "Cadastrando..."
+              : isEditMode
+              ? "Atualizar"
+              : "Salvar"}
           </CustomButton>
         </div>
       </Form>

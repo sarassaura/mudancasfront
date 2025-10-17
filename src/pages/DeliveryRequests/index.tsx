@@ -3,12 +3,14 @@ import RequestCard from "../../components/Card";
 import { Form, InputGroup, Pagination } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
+import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
+import { showError } from "../../components/ToastAlerts/ShowError";
 
 interface Pedidos {
-  "_id": string,
-  "title": string,
-  "data_entrega": string,
-  "data_retirada": string,
+  _id: string;
+  titulo: string;
+  data_entrega: string;
+  data_retirada: string;
   equipe: {
     _id: string;
     nome: string;
@@ -18,7 +20,7 @@ interface Pedidos {
     nome: string;
   };
   descricao?: string;
-  isActive?: boolean;
+  status: "em-andamento" | "inativado";
 }
 
 const parseDateToLocal = (dateString: string): Date | null => {
@@ -82,8 +84,8 @@ const filterPedidos = (
 
 const sortPedidos = (data: Pedidos[]): Pedidos[] => {
   return [...data].sort((a, b) => {
-    const aIsActive = a.isActive !== false;
-    const bIsActive = b.isActive !== false;
+    const aIsActive = a.status === "em-andamento";
+    const bIsActive = b.status === "em-andamento";
 
     if (aIsActive && !bIsActive) {
       return -1;
@@ -107,7 +109,7 @@ const sortPedidos = (data: Pedidos[]): Pedidos[] => {
 
 function DeliveryRequests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const contentRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null);
   const [rawData, setRawData] = useState<Pedidos[]>([]);
   const [allFilteredPedidos, setAllFilteredPedidos] = useState<Pedidos[]>([]);
   const [selectedDay, setSelectedDay] = useState("");
@@ -136,19 +138,44 @@ function DeliveryRequests(): JSX.Element {
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleEditRequest = (_id: string) => {
-    navigate(`/pedidos`); 
+  const handleEditRequest = (id: string) => {
+    navigate("/pedidos", {
+      state: {
+        editId: id,
+        fromManage: true,
+      },
+    });
   };
 
-  const handleInactivateRequest = (id: string, currentStatus: boolean) => {
-    setRawData(prevData =>
-      prevData.map(pedido => {
-        if (pedido._id === id) {
-          return { ...pedido, isActive: !currentStatus }; 
-        }
-        return pedido;
-      })
-    );
+  const handleInactivateRequest = async (id: string, currentStatus: string) => {
+    const newStatus =
+      currentStatus === "em-andamento" ? "inativado" : "em-andamento";
+    const action = newStatus === "inativado" ? "inativar" : "reativar";
+    const actionText = newStatus === "inativado" ? "inativado" : "reativado";
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/pedidos/${id}/${action}`, {
+        method: "PATCH",
+      });
+
+      if (response.ok) {
+        setRawData((prevData) =>
+          prevData.map((pedido) => {
+            if (pedido._id === id) {
+              return { ...pedido, status: newStatus };
+            }
+            return pedido;
+          })
+        );
+        showSuccess(`Pedido ${actionText} com sucesso!`);
+      } else {
+        const errorData = await response.json();
+        showError(errorData.message || `Erro ao ${action} pedido`);
+      }
+    } catch (error) {
+      console.error("Erro de conexão:", error);
+      showError("Erro de conexão com o servidor.");
+    }
   };
 
   useEffect(() => {
@@ -156,8 +183,7 @@ function DeliveryRequests(): JSX.Element {
     fetch(`${API_BASE_URL}/pedidos`)
       .then((response) => response.json())
       .then((data: Pedidos[]) => {
-        const dataWithStatus = data.map(p => ({ ...p, isActive: p.isActive !== false }));
-        setRawData(dataWithStatus);
+        setRawData(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -344,22 +370,23 @@ function DeliveryRequests(): JSX.Element {
         </div>
 
         <div className="d-flex flex-wrap justify-content-center gap-4 mb-5">
-            {currentData.map((pedido) => (
-              <RequestCard 
-                key={pedido._id}
-                pedidoId={pedido._id}
-                title={pedido.title || 'Pedido Sem Título'}
-                team={pedido.equipe.nome}
-                startDate={pedido.data_entrega}
-                endDate={pedido.data_retirada}
-                vehicle={pedido.veiculo.nome}
-                description={pedido.descricao ?? ''}
-                onEdit={() => handleEditRequest(pedido._id)} 
-                onInactivate={handleInactivateRequest}
-                isActive={pedido.isActive}
-              />
-            ))
-          }
+          {currentData.map((pedido) => (
+            <RequestCard
+              key={pedido._id}
+              pedidoId={pedido._id}
+              title={pedido.titulo || "Pedido Sem Título"}
+              team={pedido.equipe.nome}
+              startDate={pedido.data_entrega}
+              endDate={pedido.data_retirada}
+              vehicle={pedido.veiculo.nome}
+              description={pedido.descricao ?? ""}
+              onEdit={() => handleEditRequest(pedido._id)}
+              onInactivate={() =>
+                handleInactivateRequest(pedido._id, pedido.status)
+              }
+              isActive={pedido.status === "em-andamento"}
+            />
+          ))}
         </div>
 
         <div className="d-flex justify-content-center mb-5">
