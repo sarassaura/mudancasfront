@@ -26,7 +26,10 @@ const DayRow = ({
     value: Date | null | number | boolean
   ) => void;
 }) => (
-  <div className="row mb-3 g-3 align-items-end justify-content-center text-center" key={entry.id}>
+  <div
+    className="row mb-3 g-3 align-items-end justify-content-center text-center"
+    key={entry.id}
+  >
     <Form.Group controlId={`date-${entry.id}`} className="col-12 col-md-5">
       <Form.Label>Data</Form.Label>
       <InputGroup className="d-flex justify-content-center justify-content-md-start">
@@ -159,6 +162,7 @@ function FreelancerHours(): JSX.Element {
             hora: day.hours.toString(),
             autonomo: selectedAutonomo,
             pernoite: day.overnight,
+            status: "ativo",
           };
 
           console.log("Enviando:", dadosParaEnviar);
@@ -191,10 +195,17 @@ function FreelancerHours(): JSX.Element {
 
   return (
     <div className="container my-auto">
-      <h1 className="h1 fw-bold text-center w-100 mt-3" style={{ color: "#Ec3239" }}>
+      <h1
+        className="h1 fw-bold text-center w-100 mt-3"
+        style={{ color: "#Ec3239" }}
+      >
         Cadastro de Horas Autônomos
       </h1>
-      <Form className="mx-auto w-100" style={{ maxWidth: "480px" }} onSubmit={handleSubmit}>
+      <Form
+        className="mx-auto w-100"
+        style={{ maxWidth: "480px" }}
+        onSubmit={handleSubmit}
+      >
         <Form.Group className="mb-3 mx-auto" controlId="formGridAddress1">
           <Form.Label>Nome</Form.Label>
           <InputGroup>

@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useState, type JSX, useEffect } from "react";
 import { Button, Modal, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
@@ -6,100 +6,133 @@ import { showError } from "../../components/ToastAlerts/ShowError";
 
 interface Section {
   title: string;
-  rows: { value: string, isActive?: boolean }[];
+  rows: { value: string; isActive?: boolean; id: string }[];
   isPedido?: boolean;
+  endpoint: string;
 }
 
 function Manage(): JSX.Element {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [showInactivationModal, setShowInactivationModal] = useState(false);
-  const [itemToInactivate, setItemToInactivate] = useState<{ value: string; sectionTitle: string } | null>(null);
+  const [itemToInactivate, setItemToInactivate] = useState<{
+    value: string;
+    sectionTitle: string;
+    id: string;
+    endpoint: string;
+  } | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [sectionsData, setSectionsData] = useState<Section[]>([]);
 
-  const initialData: Section[] = [
+  const sectionsConfig = [
     {
       title: "Administradores",
-      rows: [
-        { value: "João Paulo Aleixo", isActive: true },
-        { value: "Michelle Pereira", isActive: true },
-        { value: "Paulo Henrique Aleixo", isActive: true },
-        { value: "Jenifer Campos", isActive: true },
-      ],
+      endpoint: "admins",
+      isPedido: false,
     },
     {
       title: "Funcionários",
-      rows: [
-        { value: "Vadson Souza", isActive: true },
-        { value: "Elton Alves", isActive: true },
-        { value: "Mateus Silva", isActive: true },
-        { value: "Clayton de Carvalho", isActive: true },
-        { value: "Leonan Damasceno", isActive: true },
-        { value: "Jefferson Barros", isActive: true },
-        { value: "Joel Tavares", isActive: true },
-        { value: "Gabriel Braga", isActive: true },
-        { value: "Jaziel de Carvalho", isActive: true },
-        { value: "Vitor Helfstein", isActive: true },
-      ],
+      endpoint: "funcionarios",
+      isPedido: false,
     },
     {
       title: "Autônomos",
-      rows: [
-        { value: "Debora", isActive: true },
-        { value: "Amanda", isActive: true },
-        { value: "Hugo", isActive: true },
-      ],
+      endpoint: "autonomos",
+      isPedido: false,
     },
     {
       title: "Equipes",
-      rows: [
-        { value: "Diretor", isActive: true },
-        { value: "Vendas", isActive: true },
-        { value: "Logística", isActive: true },
-        { value: "Financeiro", isActive: true },
-      ],
+      endpoint: "equipes",
+      isPedido: false,
     },
     {
       title: "Veículos",
-      rows: [
-        { value: "QKR9232", isActive: true },
-        { value: "EZL3F69", isActive: true },
-        { value: "KWN7B37", isActive: true },
-        { value: "EPU5G65", isActive: true },
-        { value: "EAL1D86", isActive: true },
-      ],
+      endpoint: "veiculos",
+      isPedido: false,
     },
     {
       title: "Pedidos",
+      endpoint: "pedidos",
       isPedido: true,
-      rows: [
-        { value: "Mudança X", isActive: true },
-        { value: "Mudança Y", isActive: true },
-        { value: "Frete X", isActive: true },
-        { value: "Frete Y", isActive: true },
-      ],
     },
   ];
 
-  const [sectionsData, setSectionsData] = useState<Section[]>(initialData);
-
   const editRoutes: Record<string, string> = {
-    "Administradores": "/admins",
-    "Funcionários": "/funcionarios",
-    "Autônomos": "/autonomos",
-    "Equipes": "/equipes",
-    "Veículos": "/veiculos",
-    "Pedidos": "/pedidos",
+    Administradores: "/admins",
+    Funcionários: "/funcionarios",
+    Autônomos: "/autonomos",
+    Equipes: "/equipes",
+    Veículos: "/veiculos",
+    Pedidos: "/pedidos",
   };
 
-  const handleToggle = (title: string) => {
-    setOpenSection(openSection === title ? null : title);
+  const fetchSectionData = async (endpoint: string, title: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${endpoint}`);
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar ${title}`);
+      }
+
+      const data = await response.json();
+
+      const rows = data.map((item: any) => ({
+        value: item.nome || item.titulo,
+        id: item._id,
+        isActive: item.status !== "inativado",
+      }));
+
+      return rows;
+    } catch (error) {
+      console.error(`Erro ao buscar ${title}:`, error);
+      showError(`Erro ao carregar ${title}`);
+      return [];
+    }
   };
 
-  const handleEdit = (_value: string, sectionTitle: string) => {
+  const reloadSection = async (endpoint: string, title: string) => {
+    const rows = await fetchSectionData(endpoint, title);
+    setSectionsData((prev) =>
+      prev.map((section) =>
+        section.endpoint === endpoint ? { ...section, rows } : section
+      )
+    );
+  };
+
+  useEffect(() => {
+    const loadAllData = async () => {
+      const allSectionsData = await Promise.all(
+        sectionsConfig.map(async (config) => {
+          const rows = await fetchSectionData(config.endpoint, config.title);
+          return {
+            title: config.title,
+            rows,
+            isPedido: config.isPedido,
+            endpoint: config.endpoint,
+          };
+        })
+      );
+
+      setSectionsData(allSectionsData);
+    };
+
+    loadAllData();
+  }, []);
+
+  const handleToggle = async (title: string, endpoint: string) => {
+    if (openSection === title) {
+      setOpenSection(null);
+    } else {
+      setOpenSection(title);
+      await reloadSection(endpoint, title);
+    }
+  };
+
+  const handleEdit = (id: string, sectionTitle: string) => {
     const route = editRoutes[sectionTitle];
-
     if (route) {
-      navigate(route); 
+      navigate(route, { state: { editId: id } });
     } else {
       showError("Rota de edição não encontrada.");
     }
@@ -110,18 +143,62 @@ function Manage(): JSX.Element {
     setItemToInactivate(null);
   };
 
-  const handleReactivate = (value: string, sectionTitle: string) => {
-    setSectionsData(prevData => prevData.map(section => {
-      if (section.title === sectionTitle) {
-        return {
-          ...section,
-          rows: section.rows.map(row => 
-            row.value === value ? { ...row, isActive: true } : row
-          ),
-        };
+  const toggleItemStatus = async (
+    id: string,
+    endpoint: string,
+    shouldInactivate: boolean
+  ) => {
+    setLoading(id);
+
+    try {
+      const action = shouldInactivate ? "inativar" : "reativar";
+      const response = await fetch(
+        `${API_BASE_URL}/${endpoint}/${id}/${action}`,
+        {
+          method: "PATCH",
+        }
+      );
+
+      if (response.ok) {
+        showSuccess(
+          `Item ${shouldInactivate ? "inativado" : "reativado"} com sucesso!`
+        );
+
+        await reloadSection(
+          endpoint,
+          sectionsConfig.find((s) => s.endpoint === endpoint)?.title || ""
+        );
+      } else {
+        const errorData = await response.json();
+        showError(
+          errorData.message ||
+            `Erro ao ${shouldInactivate ? "inativar" : "reativar"} item`
+        );
       }
-      return section;
-    }));
+    } catch (error) {
+      showError("Erro de conexão com o servidor.");
+      console.error("Erro:", error);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleInactivationPrompt = (
+    row: { value: string; isActive?: boolean; id: string },
+    sectionTitle: string,
+    endpoint: string
+  ) => {
+    if (row.isActive === false) {
+      toggleItemStatus(row.id, endpoint, false);
+    } else {
+      setItemToInactivate({
+        value: row.value,
+        sectionTitle,
+        id: row.id,
+        endpoint,
+      });
+      setShowInactivationModal(true);
+    }
   };
 
   const confirmInactivation = () => {
@@ -131,43 +208,22 @@ function Manage(): JSX.Element {
       return;
     }
 
-    setSectionsData(prevData => prevData.map(section => {
-      if (section.title === itemToInactivate.sectionTitle) {
-        return {
-          ...section,
-          rows: section.rows.map(row => 
-            row.value === itemToInactivate.value ? { ...row, isActive: false } : row
-          ),
-        };
-      }
-      return section;
-    }));
-
-    showSuccess(`"${itemToInactivate.value}" inativado com sucesso!`);
+    toggleItemStatus(itemToInactivate.id, itemToInactivate.endpoint, true);
     handleCloseModal();
-  };
-  
-  const handleInactivationPrompt = (row: { value: string, isActive?: boolean }, sectionTitle: string) => {
-    if (row.isActive === false) {
-      handleReactivate(row.value, sectionTitle);
-    } else {
-      setItemToInactivate({ value: row.value, sectionTitle });
-      setShowInactivationModal(true);
-    }
   };
 
   return (
     <div className="w-100 d-flex flex-column">
       <div className="d-flex justify-content-between px-3 px-md-5 pt-4 mb-3">
-        <button 
-          onClick={() => navigate('/')}
+        <button
+          onClick={() => navigate("/")}
           style={{
-            border: 'none', 
-            backgroundColor: 'transparent',
-            color: 'black',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
+            border: "none",
+            backgroundColor: "transparent",
+            color: "black",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
           }}
         >
           <i className="bi bi-arrow-left-circle"></i>
@@ -175,7 +231,9 @@ function Manage(): JSX.Element {
         </button>
       </div>
 
-      <h1 className="h1 fw-bold text-center mb-4" style={{ color: '#Ec3239' }}>Gerenciar</h1>
+      <h1 className="h1 fw-bold text-center mb-4" style={{ color: "#Ec3239" }}>
+        Gerenciar
+      </h1>
 
       <Table responsive bordered hover className="mb-5 align-middle">
         <tbody>
@@ -184,7 +242,7 @@ function Manage(): JSX.Element {
               <tr key={section.title} style={{ cursor: "pointer" }}>
                 <th
                   scope="row"
-                  onClick={() => handleToggle(section.title)}
+                  onClick={() => handleToggle(section.title, section.endpoint)}
                   className="bg-light"
                 >
                   {section.title}
@@ -193,55 +251,95 @@ function Manage(): JSX.Element {
 
               {openSection === section.title &&
                 section.rows
-                  .sort((a, b) => (a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1)) 
+                  .sort((a, b) =>
+                    a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1
+                  )
                   .map((row, idx) => (
-                  <tr key={`${section.title}-${idx}`} style={{ opacity: row.isActive === false ? 0.6 : 1 }}>
-                    <td className="ps-3 ps-sm-5">
-                      <div className="d-flex justify-content-between align-items-center w-100">
-                        <span className="me-2">
-                          {row.value}
-                          {row.isActive === false && <i className="bi bi-x-circle-fill text-danger ms-2" title="Inativo"></i>}
-                        </span>
-                        <div className="d-flex gap-2">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            disabled={row.isActive === false}
-                            onClick={() => handleEdit(row.value, section.title)}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant={row.isActive === false ? "outline-success" : "outline-danger"}
-                            size="sm"
-                            onClick={() => handleInactivationPrompt(row, section.title)}
-                          >
-                            {row.isActive === false ? 'Reativar' : 'Inativar'}
-                          </Button>
+                    <tr
+                      key={`${section.title}-${idx}`}
+                      style={{ opacity: row.isActive === false ? 0.6 : 1 }}
+                    >
+                      <td className="ps-3 ps-sm-5">
+                        <div className="d-flex justify-content-between align-items-center w-100">
+                          <span className="me-2">
+                            {row.value}
+                            {row.isActive === false && (
+                              <i
+                                className="bi bi-x-circle-fill text-danger ms-2"
+                                title="Inativo"
+                              ></i>
+                            )}
+                          </span>
+                          <div className="d-flex gap-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              disabled={
+                                row.isActive === false || loading === row.id
+                              }
+                              onClick={() => handleEdit(row.id, section.title)}
+                            >
+                              {loading === row.id ? "..." : "Editar"}
+                            </Button>
+                            <Button
+                              variant={
+                                row.isActive === false
+                                  ? "outline-success"
+                                  : "outline-danger"
+                              }
+                              size="sm"
+                              disabled={loading === row.id}
+                              onClick={() =>
+                                handleInactivationPrompt(
+                                  row,
+                                  section.title,
+                                  section.endpoint
+                                )
+                              }
+                            >
+                              {loading === row.id
+                                ? "..."
+                                : row.isActive === false
+                                ? "Reativar"
+                                : "Inativar"}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  ))}
             </>
           ))}
         </tbody>
       </Table>
       <Modal show={showInactivationModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>
-          <Modal.Title style={{ color: '#Ec3239' }}>Confirmar Inativação</Modal.Title>
+          <Modal.Title style={{ color: "#Ec3239" }}>
+            Confirmar Inativação
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Você tem certeza que deseja inativar *{itemToInactivate?.value}*?</p>
+          <p>
+            Você tem certeza que deseja inativar *{itemToInactivate?.value}*?
+          </p>
           <p className="text-muted small">
-            Este item será mantido no banco de dados e poderá ser reativado a qualquer momento.
+            Este item será mantido no banco de dados e poderá ser reativado a
+            qualquer momento.
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal} disabled={false}>
+          <Button
+            variant="secondary"
+            onClick={handleCloseModal}
+            disabled={false}
+          >
             Cancelar
           </Button>
-          <Button variant="danger" onClick={confirmInactivation} disabled={false}>
+          <Button
+            variant="danger"
+            onClick={confirmInactivation}
+            disabled={false}
+          >
             Sim, Inativar
           </Button>
         </Modal.Footer>
@@ -251,4 +349,3 @@ function Manage(): JSX.Element {
 }
 
 export default Manage;
-
