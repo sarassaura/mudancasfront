@@ -14,13 +14,15 @@ function Requests(): JSX.Element {
   const location = useLocation();
   const editId = location.state?.editId;
   const isEditMode = Boolean(editId);
-  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
+  const [packingDate, setPackingDate] = useState<Date | null>(null);
   const [takeoutDate, setTakeoutDate] = useState<Date | null>(null);
+  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
 
   const [formData, setFormData] = useState<DadosPedido>({
     titulo: "",
-    data_entrega: "",
+    data_embalagem: "",
     data_retirada: "",
+    data_entrega: "",
     equipe: "",
     veiculo: "",
     descricao: "",
@@ -48,6 +50,7 @@ function Requests(): JSX.Element {
 
           setFormData({
             titulo: pedidoData.titulo || "",
+            data_embalagem: pedidoData.data_embalagem || "",
             data_entrega: pedidoData.data_entrega || "",
             data_retirada: pedidoData.data_retirada || "",
             equipe: pedidoData.equipe?._id || pedidoData.equipe || "",
@@ -119,14 +122,15 @@ function Requests(): JSX.Element {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
   useEffect(() => {
-    if (deliveryDate) {
+    if (packingDate) {
       setFormData((prev) => ({
         ...prev,
-        data_entrega: formatDateToString(deliveryDate),
+        data_embalagem: formatDateToString(packingDate),
       }));
     }
-  }, [deliveryDate]);
+  }, [packingDate]);
 
   useEffect(() => {
     if (takeoutDate) {
@@ -137,12 +141,22 @@ function Requests(): JSX.Element {
     }
   }, [takeoutDate]);
 
+  useEffect(() => {
+    if (deliveryDate) {
+      setFormData((prev) => ({
+        ...prev,
+        data_entrega: formatDateToString(deliveryDate),
+      }));
+    }
+  }, [deliveryDate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (
       !formData.titulo ||
+      !formData.data_embalagem ||
       !formData.data_entrega ||
       !formData.data_retirada ||
       !formData.equipe ||
@@ -241,15 +255,15 @@ function Requests(): JSX.Element {
             />
           </Form.Group>
 
-          <Form.Group controlId="formGridDeliveryDate" className="col-6">
-            <Form.Label>Data da Entrega</Form.Label>
+          <Form.Group controlId="formGridPackingDate" className="col-4">
+            <Form.Label>Data da Embalagem</Form.Label>
             <InputGroup className="flex-nowrap">
               <InputGroup.Text>
                 <i className="bi bi-calendar-week"></i>
               </InputGroup.Text>
               <DatePicker
-                selected={deliveryDate}
-                onChange={(date) => setDeliveryDate(date)}
+                selected={packingDate}
+                onChange={(date) => setPackingDate(date)}
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0"
                 placeholderText="dd/mm/aaaa"
@@ -258,7 +272,7 @@ function Requests(): JSX.Element {
             </InputGroup>
           </Form.Group>
 
-          <Form.Group controlId="formGridTakeoutDate" className="col-6">
+          <Form.Group controlId="formGridTakeoutDate" className="col-4">
             <Form.Label>Data da Retirada</Form.Label>
             <InputGroup className="flex-nowrap">
               <InputGroup.Text>
@@ -267,6 +281,23 @@ function Requests(): JSX.Element {
               <DatePicker
                 selected={takeoutDate}
                 onChange={(date) => setTakeoutDate(date)}
+                dateFormat="dd/MM/yyyy"
+                className="form-control rounded-start-0"
+                placeholderText="dd/mm/aaaa"
+                disabled={loading || fetching}
+              />
+            </InputGroup>
+          </Form.Group>
+
+          <Form.Group controlId="formGridDeliveryDate" className="col-4">
+            <Form.Label>Data da Entrega</Form.Label>
+            <InputGroup className="flex-nowrap">
+              <InputGroup.Text>
+                <i className="bi bi-calendar-week"></i>
+              </InputGroup.Text>
+              <DatePicker
+                selected={deliveryDate}
+                onChange={(date) => setDeliveryDate(date)}
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0"
                 placeholderText="dd/mm/aaaa"

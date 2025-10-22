@@ -102,7 +102,7 @@ function Employees(): JSX.Element {
       let response;
 
       if (isEditMode) {
-        const updateData: any = {
+        const updateData: Partial<DadosFuncionario> = {
           nome: formData.nome,
           equipe: formData.equipe,
           email: formData.email,

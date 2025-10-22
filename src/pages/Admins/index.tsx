@@ -81,7 +81,7 @@ function Admins(): JSX.Element {
       let response;
 
       if (isEditMode) {
-        const updateData: any = {
+        const updateData: Partial<DadosAdmin> = {
           nome: formData.nome,
           email: formData.email,
         };

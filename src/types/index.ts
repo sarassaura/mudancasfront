@@ -7,8 +7,9 @@ export interface DadosAdmin {
 
 export interface DadosPedido {
   titulo: string;
-  data_entrega: string;
+  data_embalagem: string;
   data_retirada: string;
+  data_entrega: string;
   equipe: string;
   veiculo: string;
   descricao?: string;

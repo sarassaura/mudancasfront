@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import RequestCard from "../../components/Card";
-import { Form, InputGroup, Pagination } from "react-bootstrap";
+import { Button, Form, InputGroup, Modal, Pagination } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
@@ -9,6 +9,7 @@ import { showError } from "../../components/ToastAlerts/ShowError";
 interface Pedidos {
   _id: string;
   titulo: string;
+  data_embalagem: string;
   data_entrega: string;
   data_retirada: string;
   equipe: {
@@ -118,6 +119,8 @@ function DeliveryRequests(): JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [loading, setLoading] = useState(true);
+  const [selectedPedido, setSelectedPedido] = useState<Pedidos | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const navigate = useNavigate();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -147,35 +150,37 @@ function DeliveryRequests(): JSX.Element {
     });
   };
 
-  const handleInactivateRequest = async (id: string, currentStatus: string) => {
-    const newStatus =
-      currentStatus === "em-andamento" ? "inativado" : "em-andamento";
-    const action = newStatus === "inativado" ? "inativar" : "reativar";
-    const actionText = newStatus === "inativado" ? "inativado" : "reativado";
-
+  const handleDeleteRequest = async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/pedidos/${id}/${action}`, {
+      const response = await fetch(`${API_BASE_URL}/pedidos/${id}/inativar`, {
         method: "PATCH",
       });
 
       if (response.ok) {
         setRawData((prevData) =>
-          prevData.map((pedido) => {
-            if (pedido._id === id) {
-              return { ...pedido, status: newStatus };
-            }
-            return pedido;
-          })
+          prevData.map((pedido) =>
+            pedido._id === id ? { ...pedido, status: "inativado" } : pedido
+          )
         );
-        showSuccess(`Pedido ${actionText} com sucesso!`);
+        showSuccess("Pedido excluído com sucesso!");
       } else {
         const errorData = await response.json();
-        showError(errorData.message || `Erro ao ${action} pedido`);
+        showError(errorData.message || "Erro ao excluir pedido.");
       }
     } catch (error) {
       console.error("Erro de conexão:", error);
       showError("Erro de conexão com o servidor.");
     }
+  };
+
+  const handleOpenModal = (pedido: Pedidos) => {
+    setSelectedPedido(pedido);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedPedido(null);
+    setShowModal(false);
   };
 
   useEffect(() => {
@@ -371,21 +376,21 @@ function DeliveryRequests(): JSX.Element {
 
         <div className="d-flex flex-wrap justify-content-center gap-4 mb-5">
           {currentData.map((pedido) => (
-            <RequestCard
-              key={pedido._id}
-              pedidoId={pedido._id}
-              title={pedido.titulo || "Pedido Sem Título"}
-              team={pedido.equipe.nome}
-              startDate={pedido.data_entrega}
-              endDate={pedido.data_retirada}
-              vehicle={pedido.veiculo.nome}
-              description={pedido.descricao ?? ""}
-              onEdit={() => handleEditRequest(pedido._id)}
-              onInactivate={() =>
-                handleInactivateRequest(pedido._id, pedido.status)
-              }
-              isActive={pedido.status === "em-andamento"}
-            />
+            <div key={pedido._id} onClick={() => handleOpenModal(pedido)} style={{ cursor: "pointer" }}>
+              <RequestCard
+                key={pedido._id}
+                pedidoId={pedido._id}
+                title={pedido.titulo || "Pedido Sem Título"}
+                team={pedido.equipe.nome}
+                packingDate={pedido.data_embalagem}
+                takeoverDate={pedido.data_retirada}
+                deliveryDate={pedido.data_entrega}
+                vehicle={pedido.veiculo.nome}
+                description={pedido.descricao ?? ""}
+                onEdit={() => handleEditRequest(pedido._id)}
+                onDelete={() => handleDeleteRequest(pedido._id)}
+              />
+            </div>
           ))}
         </div>
 
@@ -403,6 +408,44 @@ function DeliveryRequests(): JSX.Element {
           </Pagination>
         </div>
       </div>
+
+      <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title style={{ color: "#Ec3239" }}>
+            {selectedPedido?.titulo || "Pedido Sem Título"}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedPedido ? (
+            <>
+              <p><strong>Equipe:</strong> {selectedPedido.equipe?.nome}</p>
+              <p><strong>Veículo:</strong> {selectedPedido.veiculo?.nome}</p>
+              <p><strong>Data de Embalagem:</strong> {selectedPedido.data_embalagem}</p>
+              <p><strong>Data de Retirada:</strong> {selectedPedido.data_retirada}</p>
+              <p><strong>Data de Entrega:</strong> {selectedPedido.data_entrega}</p>
+              <p><strong>Status:</strong> {selectedPedido.status === "em-andamento" ? "Em andamento" : "Inativado"}</p>
+              <p><strong>Descrição completa:</strong></p>
+              <div
+                style={{
+                  backgroundColor: "#f8f9fa",
+                  padding: "10px 15px",
+                  borderRadius: "8px",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {selectedPedido.descricao || "Sem descrição disponível."}
+              </div>
+            </>
+          ) : (
+            <p>Carregando informações...</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Fechar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
