@@ -23,10 +23,14 @@ interface Pedidos {
   descricao?: string;
 }
 
-interface CardItem extends Pedidos {
-  data_foco: string;
-  tipo_data: "Embalagem" | "Retirada" | "Entrega";
-  card_key: string;
+interface ConsolidatedCardItem {
+  _id: string;   titulo: string;
+  equipe: Pedidos["equipe"];
+  veiculo: Pedidos["veiculo"];
+  descricao?: string;
+  data_foco: string; 
+  tipos_evento: ("Embalagem" | "Retirada" | "Entrega")[];
+  card_key: string; 
 }
 
 const COLOR_OPTIONS = ["#E0F7FA", "#fff0f0"];
@@ -49,59 +53,59 @@ const parseDateToLocal = (dateString: string): Date | null => {
   return isNaN(date.getTime()) ? null : date;
 };
 
-const expandPedidosToCardItems = (pedidos: Pedidos[]): CardItem[] => {
-  const expanded: CardItem[] = [];
+const expandPedidosToConsolidatedCardItems = (
+  pedidos: Pedidos[]
+): ConsolidatedCardItem[] => {
+  const consolidatedMap = new Map<
+    string,
+    ConsolidatedCardItem
+  >();
 
   pedidos.forEach((pedido) => {
-    const dates = {
-      embalagem: pedido.data_embalagem,
-      retirada: pedido.data_retirada,
-      entrega: pedido.data_entrega,
-    };
-    
-    const addedDates = new Set<string>();
+    const events: { date: string; type: "Embalagem" | "Retirada" | "Entrega" }[] = [];
 
-    if (dates.embalagem && !addedDates.has(dates.embalagem)) {
-      expanded.push({
-        ...pedido,
-        data_foco: dates.embalagem,
-        tipo_data: "Embalagem",
-        card_key: `${pedido._id}-embalagem`,
-      });
-      addedDates.add(dates.embalagem);
+    if (pedido.data_embalagem) {
+      events.push({ date: pedido.data_embalagem, type: "Embalagem" });
+    }
+    if (pedido.data_retirada) {
+      events.push({ date: pedido.data_retirada, type: "Retirada" });
+    }
+    if (pedido.data_entrega) {
+      events.push({ date: pedido.data_entrega, type: "Entrega" });
     }
 
-    if (dates.retirada && !addedDates.has(dates.retirada)) {
-      expanded.push({
-        ...pedido,
-        data_foco: dates.retirada,
-        tipo_data: "Retirada",
-        card_key: `${pedido._id}-retirada`,
-      });
-      addedDates.add(dates.retirada);
-    }
+    events.forEach((event) => {
+      const key = `${pedido._id}-${event.date}`; 
 
-    if (dates.entrega && !addedDates.has(dates.entrega)) {
-      expanded.push({
-        ...pedido,
-        data_foco: dates.entrega,
-        tipo_data: "Entrega",
-        card_key: `${pedido._id}-entrega`,
-      });
-      addedDates.add(dates.entrega);
-    }
+      if (consolidatedMap.has(key)) {
+        const existingCard = consolidatedMap.get(key)!;
+        if (!existingCard.tipos_evento.includes(event.type)) {
+          existingCard.tipos_evento.push(event.type);
+        }
+      } else {
+        consolidatedMap.set(key, {
+          _id: pedido._id,
+          titulo: pedido.titulo,
+          equipe: pedido.equipe,
+          veiculo: pedido.veiculo,
+          descricao: pedido.descricao,
+          data_foco: event.date,
+          tipos_evento: [event.type],
+          card_key: key,
+        });
+      }
+    });
   });
-
-  return expanded;
+  return Array.from(consolidatedMap.values());
 };
 
 
 const filterCardItems = (
-  data: CardItem[],
+  data: ConsolidatedCardItem[],
   day: number | "",
   month: number | "",
   year: number | ""
-): CardItem[] => {
+): ConsolidatedCardItem[] => {
   const hasFilter = day || month || year;
 
   return data.filter((entry) => {
@@ -127,7 +131,7 @@ const filterCardItems = (
   });
 };
 
-const sortCardItems = (data: CardItem[]): CardItem[] =>
+const sortCardItems = (data: ConsolidatedCardItem[]): ConsolidatedCardItem[] =>
   [...data].sort((a, b) => {
     const dateA = parseDateToLocal(a.data_foco);
     const dateB = parseDateToLocal(b.data_foco);
@@ -137,12 +141,11 @@ const sortCardItems = (data: CardItem[]): CardItem[] =>
     return dateA!.getTime() - dateB!.getTime();
   });
 
-
 function DeliveryRequests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const contentRef = useRef<HTMLDivElement>(null);
   const [rawData, setRawData] = useState<Pedidos[]>([]);
-  const [allFilteredCardItems, setAllFilteredCardItems] = useState<CardItem[]>(
+  const [allFilteredCardItems, setAllFilteredCardItems] = useState<ConsolidatedCardItem[]>( 
     []
   );
   const [selectedDay, setSelectedDay] = useState<number | "">("");
@@ -151,7 +154,7 @@ function DeliveryRequests(): JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [loading, setLoading] = useState(true);
-  const [selectedPedido, setSelectedPedido] = useState<Pedidos | null>(null);
+  const [selectedPedido, setSelectedPedido] = useState<Pedidos | null>(null); 
   const [showModal, setShowModal] = useState(false);
   
   const [dayColorMap, setDayColorMap] = useState<Map<string, string>>(new Map());
@@ -206,9 +209,12 @@ function DeliveryRequests(): JSX.Element {
     }
   };
 
-  const handleOpenModal = (cardItem: CardItem) => {
-    setSelectedPedido(cardItem);
-    setShowModal(true);
+  const handleOpenModal = (cardItem: ConsolidatedCardItem) => { 
+    const originalPedido = rawData.find(p => p._id === cardItem._id)
+    if (originalPedido) {
+        setSelectedPedido(originalPedido);
+        setShowModal(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -231,10 +237,10 @@ function DeliveryRequests(): JSX.Element {
   }, [API_BASE_URL]);
 
   useEffect(() => {
-    const allCardItems = expandPedidosToCardItems(rawData);
+    const allConsolidatedCardItems = expandPedidosToConsolidatedCardItems(rawData);
 
     const newFiltered = filterCardItems(
-      allCardItems,
+      allConsolidatedCardItems,
       selectedDay,
       selectedMonth,
       selectedYear
@@ -449,24 +455,24 @@ function DeliveryRequests(): JSX.Element {
               <RequestCard
                 key={cardItem.card_key}
                 pedidoId={cardItem._id}
-                title={`[${cardItem.tipo_data}] ${
+                title={`[${([cardItem.tipos_evento.join('/')])}] ${ 
                   cardItem.titulo || "Pedido Sem Título"
-                }`} 
+                }`}
                 team={cardItem.equipe.nome}
                 packingDate={
-                  cardItem.tipo_data === "Embalagem"
-                    ? cardItem.data_foco
-                    : "---"
+                    cardItem.tipos_evento.includes("Embalagem")
+                      ? cardItem.data_foco
+                      : "---"
                 }
                 takeoutDate={
-                  cardItem.tipo_data === "Retirada"
-                    ? cardItem.data_foco
-                    : "---"
+                    cardItem.tipos_evento.includes("Retirada")
+                      ? cardItem.data_foco
+                      : "---"
                 }
                 deliveryDate={
-                  cardItem.tipo_data === "Entrega"
-                    ? cardItem.data_foco
-                    : "---"
+                    cardItem.tipos_evento.includes("Entrega")
+                      ? cardItem.data_foco
+                      : "---"
                 }
                 vehicle={cardItem.veiculo.nome}
                 description={cardItem.descricao ?? ""}
