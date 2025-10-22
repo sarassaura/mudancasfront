@@ -17,7 +17,6 @@ function Admins(): JSX.Element {
     nome: "",
     email: "",
     senha: "",
-    status: "ativo",
   });
 
   const [loading, setLoading] = useState(false);
@@ -39,7 +38,6 @@ function Admins(): JSX.Element {
             nome: adminData.nome || "",
             email: adminData.email || "",
             senha: "",
-            status: adminData.status || "ativo",
           });
         } catch (error) {
           showError("Erro ao carregar dados para edição");

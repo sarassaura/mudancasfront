@@ -180,7 +180,6 @@ function FreelancerHours(): JSX.Element {
             autonomo: selectedAutonomo,
             pernoite: day.overnight,
             extra: day.extra,
-            status: "ativo",
           };
 
           console.log("Enviando:", dadosParaEnviar);

@@ -17,7 +17,6 @@ function Vehicles(): JSX.Element {
 
   const [formData, setFormData] = useState<DadosVeiculo>({
     nome: "",
-    status: "ativo",
   });
 
   const [loading, setLoading] = useState(false);
@@ -37,7 +36,6 @@ function Vehicles(): JSX.Element {
           const veiculoData = await response.json();
           setFormData({
             nome: veiculoData.nome || "",
-            status: veiculoData.status || "ativo",
           });
         } catch (error) {
           showError("Erro ao carregar dados para edição");
