@@ -21,8 +21,15 @@ interface Pedidos {
     nome: string;
   };
   descricao?: string;
-  status: "em-andamento" | "inativado";
 }
+
+interface CardItem extends Pedidos {
+  data_foco: string;
+  tipo_data: "Embalagem" | "Retirada" | "Entrega";
+  card_key: string;
+}
+
+const COLOR_OPTIONS = ["#E0F7FA", "#fff0f0"];
 
 const parseDateToLocal = (dateString: string): Date | null => {
   let yyyy_mm_dd: string;
@@ -42,85 +49,112 @@ const parseDateToLocal = (dateString: string): Date | null => {
   return isNaN(date.getTime()) ? null : date;
 };
 
-const filterPedidos = (
-  data: Pedidos[],
-  day: string,
-  month: string,
-  year: string
-): Pedidos[] => {
-  let filteredData = data;
+const expandPedidosToCardItems = (pedidos: Pedidos[]): CardItem[] => {
+  const expanded: CardItem[] = [];
 
-  if (day || month || year) {
-    filteredData = data.filter((entry) => {
-      const entryDate = parseDateToLocal(entry.data_entrega);
-      if (!entryDate) return false;
+  pedidos.forEach((pedido) => {
+    const dates = {
+      embalagem: pedido.data_embalagem,
+      retirada: pedido.data_retirada,
+      entrega: pedido.data_entrega,
+    };
+    
+    const addedDates = new Set<string>();
 
-      const entryDay = entryDate.getDate().toString();
-      const entryMonth = (entryDate.getMonth() + 1).toString();
-      const entryYear = entryDate.getFullYear().toString();
+    if (dates.embalagem && !addedDates.has(dates.embalagem)) {
+      expanded.push({
+        ...pedido,
+        data_foco: dates.embalagem,
+        tipo_data: "Embalagem",
+        card_key: `${pedido._id}-embalagem`,
+      });
+      addedDates.add(dates.embalagem);
+    }
 
+    if (dates.retirada && !addedDates.has(dates.retirada)) {
+      expanded.push({
+        ...pedido,
+        data_foco: dates.retirada,
+        tipo_data: "Retirada",
+        card_key: `${pedido._id}-retirada`,
+      });
+      addedDates.add(dates.retirada);
+    }
+
+    if (dates.entrega && !addedDates.has(dates.entrega)) {
+      expanded.push({
+        ...pedido,
+        data_foco: dates.entrega,
+        tipo_data: "Entrega",
+        card_key: `${pedido._id}-entrega`,
+      });
+      addedDates.add(dates.entrega);
+    }
+  });
+
+  return expanded;
+};
+
+
+const filterCardItems = (
+  data: CardItem[],
+  day: number | "",
+  month: number | "",
+  year: number | ""
+): CardItem[] => {
+  const hasFilter = day || month || year;
+
+  return data.filter((entry) => {
+    const entryDate = parseDateToLocal(entry.data_foco);
+    if (!entryDate) return false;
+
+    const entryDay = entryDate.getDate();
+    const entryMonth = entryDate.getMonth() + 1;
+    const entryYear = entryDate.getFullYear();
+
+    if (hasFilter) {
       const dayMatch = !day || entryDay === day;
       const monthMatch = !month || entryMonth === month;
       const yearMatch = !year || entryYear === year;
-
       return dayMatch && monthMatch && yearMatch;
-    });
-  }
+    }
 
-  if (!day && !month && !year) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setHours(0, 0, 0, 0);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    filteredData = data.filter((entry) => {
-      const entryDate = parseDateToLocal(entry.data_entrega);
-      if (!entryDate) return false;
-
-      return entryDate >= thirtyDaysAgo;
-    });
-  }
-
-  return filteredData;
-};
-
-const sortPedidos = (data: Pedidos[]): Pedidos[] => {
-  return [...data].sort((a, b) => {
-    const aIsActive = a.status === "em-andamento";
-    const bIsActive = b.status === "em-andamento";
-
-    if (aIsActive && !bIsActive) {
-      return -1;
-    }
-    if (!aIsActive && bIsActive) {
-      return 1;
-    }
-    if (aIsActive === bIsActive) {
-      const dateA = parseDateToLocal(a.data_entrega);
-      const dateB = parseDateToLocal(b.data_entrega);
-
-      if (!dateA && dateB) return 1;
-      if (dateA && !dateB) return -1;
-      if (!dateA && !dateB) return 0;
-
-      return dateA!.getTime() - dateB!.getTime();
-    }
-    return 0;
+    return entryDate >= thirtyDaysAgo;
   });
 };
+
+const sortCardItems = (data: CardItem[]): CardItem[] =>
+  [...data].sort((a, b) => {
+    const dateA = parseDateToLocal(a.data_foco);
+    const dateB = parseDateToLocal(b.data_foco);
+    if (!dateA && dateB) return 1;
+    if (dateA && !dateB) return -1;
+    if (!dateA && !dateB) return 0;
+    return dateA!.getTime() - dateB!.getTime();
+  });
+
 
 function DeliveryRequests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const contentRef = useRef<HTMLDivElement>(null);
   const [rawData, setRawData] = useState<Pedidos[]>([]);
-  const [allFilteredPedidos, setAllFilteredPedidos] = useState<Pedidos[]>([]);
-  const [selectedDay, setSelectedDay] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
+  const [allFilteredCardItems, setAllFilteredCardItems] = useState<CardItem[]>(
+    []
+  );
+  const [selectedDay, setSelectedDay] = useState<number | "">("");
+  const [selectedMonth, setSelectedMonth] = useState<number | "">("");
+  const [selectedYear, setSelectedYear] = useState<number | "">("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [loading, setLoading] = useState(true);
   const [selectedPedido, setSelectedPedido] = useState<Pedidos | null>(null);
   const [showModal, setShowModal] = useState(false);
+  
+  const [dayColorMap, setDayColorMap] = useState<Map<string, string>>(new Map());
 
   const navigate = useNavigate();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -140,7 +174,6 @@ function DeliveryRequests(): JSX.Element {
   ];
   const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleEditRequest = (id: string) => {
     navigate("/pedidos", {
       state: {
@@ -173,8 +206,8 @@ function DeliveryRequests(): JSX.Element {
     }
   };
 
-  const handleOpenModal = (pedido: Pedidos) => {
-    setSelectedPedido(pedido);
+  const handleOpenModal = (cardItem: CardItem) => {
+    setSelectedPedido(cardItem);
     setShowModal(true);
   };
 
@@ -198,19 +231,45 @@ function DeliveryRequests(): JSX.Element {
   }, [API_BASE_URL]);
 
   useEffect(() => {
-    const newFiltered = filterPedidos(
-      rawData,
+    const allCardItems = expandPedidosToCardItems(rawData);
+
+    const newFiltered = filterCardItems(
+      allCardItems,
       selectedDay,
       selectedMonth,
       selectedYear
     );
 
-    const sortedFiltered = sortPedidos(newFiltered);
+    const sortedFiltered = sortCardItems(newFiltered);
 
-    setAllFilteredPedidos(sortedFiltered);
+    const newDayColorMap = new Map<string, string>();
+    let colorIndex = 0;
+
+    const uniqueSortedDates = Array.from(
+      new Set(sortedFiltered.map((item) => item.data_foco))
+    ).sort((a, b) => {
+      const dateA = parseDateToLocal(a);
+      const dateB = parseDateToLocal(b);
+      return dateA && dateB ? dateA.getTime() - dateB.getTime() : 0;
+    });
+
+    uniqueSortedDates.forEach((dateString) => {
+      if (!newDayColorMap.has(dateString)) {
+        const color = COLOR_OPTIONS[colorIndex % COLOR_OPTIONS.length];
+        newDayColorMap.set(dateString, color);
+        colorIndex++;
+      }
+    });
+
+    setDayColorMap(newDayColorMap);
+    setAllFilteredCardItems(sortedFiltered);
     setCurrentPage(1);
-  }, [rawData, selectedDay, selectedMonth, selectedYear]);
+  }, [rawData, selectedDay, selectedMonth, selectedYear]); 
 
+  const getCardColor = (dateString: string): string => {
+      return dayColorMap.get(dateString) || COLOR_OPTIONS[0]; 
+  };
+  
   const handleExportPDF = () => {
     const element = contentRef.current;
     if (!element) return;
@@ -236,7 +295,7 @@ function DeliveryRequests(): JSX.Element {
     html2pdf().set(opt).from(element).save();
   };
 
-  const paginatedPedidos = allFilteredPedidos;
+  const paginatedPedidos = allFilteredCardItems;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = paginatedPedidos.slice(
     startIndex,
@@ -321,7 +380,9 @@ function DeliveryRequests(): JSX.Element {
               </InputGroup.Text>
               <Form.Select
                 value={selectedDay}
-                onChange={(e) => setSelectedDay(e.target.value)}
+                onChange={(e) =>
+                  setSelectedDay(e.target.value ? Number(e.target.value) : "")
+                }
               >
                 <option value="">Dia</option>
                 {days.map((day) => (
@@ -341,7 +402,9 @@ function DeliveryRequests(): JSX.Element {
               </InputGroup.Text>
               <Form.Select
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={(e) =>
+                  setSelectedMonth(e.target.value ? Number(e.target.value) : "")
+                }
               >
                 <option value="">Mês</option>
                 {months.map((month, index) => (
@@ -361,7 +424,9 @@ function DeliveryRequests(): JSX.Element {
               </InputGroup.Text>
               <Form.Select
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
+                onChange={(e) =>
+                  setSelectedYear(e.target.value ? Number(e.target.value) : "")
+                }
               >
                 <option value="">Ano</option>
                 {years.map((year) => (
@@ -375,20 +440,39 @@ function DeliveryRequests(): JSX.Element {
         </div>
 
         <div className="d-flex flex-wrap justify-content-center gap-4 mb-5">
-          {currentData.map((pedido) => (
-            <div key={pedido._id} onClick={() => handleOpenModal(pedido)} style={{ cursor: "pointer" }}>
+          {currentData.map((cardItem) => (
+            <div
+              key={cardItem.card_key} 
+              onClick={() => handleOpenModal(cardItem)}
+              style={{ cursor: "pointer" }}
+            >
               <RequestCard
-                key={pedido._id}
-                pedidoId={pedido._id}
-                title={pedido.titulo || "Pedido Sem Título"}
-                team={pedido.equipe.nome}
-                packingDate={pedido.data_embalagem}
-                takeoverDate={pedido.data_retirada}
-                deliveryDate={pedido.data_entrega}
-                vehicle={pedido.veiculo.nome}
-                description={pedido.descricao ?? ""}
-                onEdit={() => handleEditRequest(pedido._id)}
-                onDelete={() => handleDeleteRequest(pedido._id)}
+                key={cardItem.card_key}
+                pedidoId={cardItem._id}
+                title={`[${cardItem.tipo_data}] ${
+                  cardItem.titulo || "Pedido Sem Título"
+                }`} 
+                team={cardItem.equipe.nome}
+                packingDate={
+                  cardItem.tipo_data === "Embalagem"
+                    ? cardItem.data_foco
+                    : "---"
+                }
+                takeoutDate={
+                  cardItem.tipo_data === "Retirada"
+                    ? cardItem.data_foco
+                    : "---"
+                }
+                deliveryDate={
+                  cardItem.tipo_data === "Entrega"
+                    ? cardItem.data_foco
+                    : "---"
+                }
+                vehicle={cardItem.veiculo.nome}
+                description={cardItem.descricao ?? ""}
+                onEdit={() => handleEditRequest(cardItem._id)}
+                onDelete={() => handleDeleteRequest(cardItem._id)}
+                cardColor={getCardColor(cardItem.data_foco)} 
               />
             </div>
           ))}
@@ -418,13 +502,26 @@ function DeliveryRequests(): JSX.Element {
         <Modal.Body>
           {selectedPedido ? (
             <>
-              <p><strong>Equipe:</strong> {selectedPedido.equipe?.nome}</p>
-              <p><strong>Veículo:</strong> {selectedPedido.veiculo?.nome}</p>
-              <p><strong>Data de Embalagem:</strong> {selectedPedido.data_embalagem}</p>
-              <p><strong>Data de Retirada:</strong> {selectedPedido.data_retirada}</p>
-              <p><strong>Data de Entrega:</strong> {selectedPedido.data_entrega}</p>
-              <p><strong>Status:</strong> {selectedPedido.status === "em-andamento" ? "Em andamento" : "Inativado"}</p>
-              <p><strong>Descrição completa:</strong></p>
+              <p>
+                <strong>Equipe:</strong> {selectedPedido.equipe?.nome}
+              </p>
+              <p>
+                <strong>Veículo:</strong> {selectedPedido.veiculo?.nome}
+              </p>
+              <p>
+                <strong>Data de Embalagem:</strong>{" "}
+                {selectedPedido.data_embalagem}
+              </p>
+              <p>
+                <strong>Data de Retirada:</strong>{" "}
+                {selectedPedido.data_retirada}
+              </p>
+              <p>
+                <strong>Data de Entrega:</strong> {selectedPedido.data_entrega}
+              </p>
+              <p>
+                <strong>Descrição completa:</strong>
+              </p>
               <div
                 style={{
                   backgroundColor: "#f8f9fa",

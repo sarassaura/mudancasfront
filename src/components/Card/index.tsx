@@ -5,26 +5,28 @@ interface RequestCardProps {
   title: string;
   team: string;
   packingDate: string;
-  takeoverDate: string;
+  takeoutDate: string;
   deliveryDate: string;
   vehicle: string;
   description: string;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   pedidoId: string;
+  cardColor: string;
 }
 
 function RequestCard({ 
   title, 
   team, 
   packingDate, 
-  takeoverDate,
+  takeoutDate,
   deliveryDate, 
   vehicle, 
   description, 
   onEdit, 
   onDelete, 
-  pedidoId 
+  pedidoId,
+  cardColor
 }: RequestCardProps): JSX.Element {
   const descriptionStyle = {
     overflow: 'hidden',
@@ -38,7 +40,7 @@ function RequestCard({
     borderRadius: '12px', 
     padding: '24px', 
     width: '350px',
-    backgroundColor: 'white',
+    backgroundColor: cardColor,
     display: 'flex',              
     flexDirection: 'column' as const,
     justifyContent: 'space-between',
@@ -56,7 +58,7 @@ function RequestCard({
             Embalagem: <span>{packingDate}</span>
           </span>
           <span>
-            Retirada: <span>{takeoverDate}</span>
+            Retirada: <span>{takeoutDate}</span>
           </span>
           <span>
             Entrega: <span>{deliveryDate}</span>
