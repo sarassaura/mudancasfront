@@ -6,24 +6,24 @@ import html2pdf from "html2pdf.js";
 interface Premiacoes {
   _id: string;
   data: string;
-  hora: string;
+  dias: string;
   autonomo: {
     _id: string;
     nome: string;
   };
   pernoite: boolean;
+  extra: boolean;
 }
 
 interface AwardEntry {
   id: string;
   name: string;
-  hoursWorked: number;
-  extraHours: number;
+  totalDays: number;
   overnights: number;
+  extraCount: number;
 }
 
 const RED_COLOR = "#Ec3239";
-const jornadaNormalHoras = 150;
 
 const parseDateToLocal = (dateString: string): Date | null => {
   let yyyy_mm_dd: string;
@@ -47,34 +47,30 @@ const aggregateAwardsData = (data: Premiacoes[]): AwardEntry[] => {
 
   data.forEach((entry) => {
     const autonomoId = entry.autonomo._id;
-    const hours = parseInt(entry.hora, 10) || 0;
+    const days = parseInt(entry.dias, 10) || 0;
 
     if (!aggregated[autonomoId]) {
       aggregated[autonomoId] = {
         id: autonomoId,
         name: entry.autonomo.nome,
-        hoursWorked: 0,
-        extraHours: 0,
+        totalDays: 0,
         overnights: 0,
+        extraCount: 0,
       };
     }
 
-    aggregated[autonomoId].hoursWorked += hours;
+    aggregated[autonomoId].totalDays += days;
 
     if (entry.pernoite) {
       aggregated[autonomoId].overnights += 1;
     }
+
+    if (entry.extra) {
+      aggregated[autonomoId].extraCount += 1;
+    }
   });
 
-  return Object.values(aggregated).map((entry) => {
-    const hoursWorked = entry.hoursWorked;
-    const extraHours = Math.max(0, hoursWorked - jornadaNormalHoras);
-
-    return {
-      ...entry,
-      extraHours: extraHours,
-    };
-  });
+  return Object.values(aggregated);
 };
 
 const filterAndAggregateData = (
@@ -107,7 +103,9 @@ const filterAndAggregateData = (
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     filteredData = data.filter((entry) => {
-      const entryDate = new Date(entry.data.split("/").reverse().join("-"));
+      const parts = entry.data.split("/");
+      const isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      const entryDate = new Date(isoDate);
       return !isNaN(entryDate.getTime()) && entryDate >= thirtyDaysAgo;
     });
   }
@@ -149,7 +147,7 @@ function Awards(): JSX.Element {
     key: keyof AwardEntry;
     order: "asc" | "desc";
   }>({
-    key: "hoursWorked",
+    key: "totalDays",
     order: "desc",
   });
 
@@ -160,8 +158,8 @@ function Awards(): JSX.Element {
   ): AwardEntry[] => {
     return [...dataToSort].sort((a, b) => {
       if (
-        key === "hoursWorked" ||
-        key === "extraHours" ||
+        key === "totalDays" ||
+        key === "extraCount" ||
         key === "overnights"
       ) {
         const aValue = a[key];
@@ -439,17 +437,10 @@ function Awards(): JSX.Element {
               </th>
               <th
                 style={{ cursor: "pointer" }}
-                onClick={() => handleSort("hoursWorked")}
+                onClick={() => handleSort("totalDays")}
               >
-                Horas Trabalhadas
-                {renderSortIcon("hoursWorked")}
-              </th>
-              <th
-                style={{ cursor: "pointer" }}
-                onClick={() => handleSort("extraHours")}
-              >
-                Horas Extras
-                {renderSortIcon("extraHours")}
+                Diárias
+                {renderSortIcon("totalDays")}
               </th>
               <th
                 style={{ cursor: "pointer" }}
@@ -458,6 +449,13 @@ function Awards(): JSX.Element {
                 Pernoites
                 {renderSortIcon("overnights")}
               </th>
+              <th
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("extraCount")}
+              >
+                Extras
+                {renderSortIcon("extraCount")}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -465,9 +463,9 @@ function Awards(): JSX.Element {
               <tr key={entry.id}>
                 <td className="fw-bold">{startIndex + index + 1}</td>
                 <td>{entry.name}</td>
-                <td>{entry.hoursWorked}</td>
-                <td>{entry.extraHours}</td>
+                <td>{entry.totalDays}</td>
                 <td>{entry.overnights}</td>
+                <td>{entry.extraCount}</td>
               </tr>
             ))}
           </tbody>
