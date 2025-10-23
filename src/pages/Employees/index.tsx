@@ -20,7 +20,6 @@ function Employees(): JSX.Element {
     equipe: "",
     email: "",
     senha: "",
-    status: "ativo",
   });
 
   const [equipes, setEquipes] = useState<Equipe[]>([]);
@@ -54,7 +53,6 @@ function Employees(): JSX.Element {
             equipe: funcionarioData.equipe?._id || funcionarioData.equipe || "",
             email: funcionarioData.email || "",
             senha: "",
-            status: funcionarioData.status || "ativo",
           });
         } catch (error) {
           showError("Erro ao carregar dados para edição");
@@ -102,7 +100,7 @@ function Employees(): JSX.Element {
       let response;
 
       if (isEditMode) {
-        const updateData: any = {
+        const updateData: Partial<DadosFuncionario> = {
           nome: formData.nome,
           equipe: formData.equipe,
           email: formData.email,

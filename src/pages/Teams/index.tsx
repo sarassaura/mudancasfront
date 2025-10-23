@@ -17,7 +17,6 @@ function Teams(): JSX.Element {
 
   const [formData, setFormData] = useState<DadosEquipe>({
     nome: "",
-    status: "ativo",
   });
 
   const [loading, setLoading] = useState(false);
@@ -37,7 +36,6 @@ function Teams(): JSX.Element {
           const equipeData = await response.json();
           setFormData({
             nome: equipeData.nome || "",
-            status: equipeData.status || "ativo",
           });
         } catch (error) {
           showError("Erro ao carregar dados para edição");

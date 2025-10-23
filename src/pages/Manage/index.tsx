@@ -15,8 +15,8 @@ function Manage(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const [showInactivationModal, setShowInactivationModal] = useState(false);
-  const [itemToInactivate, setItemToInactivate] = useState<{
+  const [showDeletionModal, setShowDeletionModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{
     value: string;
     sectionTitle: string;
     id: string;
@@ -80,7 +80,7 @@ function Manage(): JSX.Element {
       const rows = data.map((item: any) => ({
         value: item.nome || item.titulo,
         id: item._id,
-        isActive: item.status !== "inativado",
+        isActive: item.status !== "excluído",
       }));
 
       return rows;
@@ -139,41 +139,34 @@ function Manage(): JSX.Element {
   };
 
   const handleCloseModal = () => {
-    setShowInactivationModal(false);
-    setItemToInactivate(null);
+    setShowDeletionModal(false);
+    setItemToDelete(null);
   };
 
-  const toggleItemStatus = async (
-    id: string,
-    endpoint: string,
-    shouldInactivate: boolean
-  ) => {
+  const deleteItem = async (id: string, endpoint: string) => {
     setLoading(id);
 
     try {
-      const action = shouldInactivate ? "inativar" : "reativar";
-      const response = await fetch(
-        `${API_BASE_URL}/${endpoint}/${id}/${action}`,
-        {
-          method: "PATCH",
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}/excluir`, {
+        method: "PATCH",
+      });
 
       if (response.ok) {
-        showSuccess(
-          `Item ${shouldInactivate ? "inativado" : "reativado"} com sucesso!`
-        );
+        showSuccess("Item excluído com sucesso!");
 
-        await reloadSection(
-          endpoint,
-          sectionsConfig.find((s) => s.endpoint === endpoint)?.title || ""
+        setSectionsData((prev) =>
+          prev.map((section) =>
+            section.endpoint === endpoint
+              ? {
+                  ...section,
+                  rows: section.rows.filter((r) => r.id !== id),
+                }
+              : section
+          )
         );
       } else {
         const errorData = await response.json();
-        showError(
-          errorData.message ||
-            `Erro ao ${shouldInactivate ? "inativar" : "reativar"} item`
-        );
+        showError(errorData.message || "Erro ao excluir item");
       }
     } catch (error) {
       showError("Erro de conexão com o servidor.");
@@ -183,32 +176,28 @@ function Manage(): JSX.Element {
     }
   };
 
-  const handleInactivationPrompt = (
-    row: { value: string; isActive?: boolean; id: string },
+  const handleDelete = (
+    row: { value: string; id: string },
     sectionTitle: string,
     endpoint: string
   ) => {
-    if (row.isActive === false) {
-      toggleItemStatus(row.id, endpoint, false);
-    } else {
-      setItemToInactivate({
-        value: row.value,
-        sectionTitle,
-        id: row.id,
-        endpoint,
-      });
-      setShowInactivationModal(true);
-    }
+    setItemToDelete({
+      value: row.value,
+      sectionTitle,
+      id: row.id,
+      endpoint,
+    });
+    setShowDeletionModal(true);
   };
 
-  const confirmInactivation = () => {
-    if (!itemToInactivate) {
-      showError("Nenhum item selecionado para inativação.");
+  const confirmDeletion = () => {
+    if (!itemToDelete) {
+      showError("Nenhum item selecionado para exclusão.");
       handleCloseModal();
       return;
     }
 
-    toggleItemStatus(itemToInactivate.id, itemToInactivate.endpoint, true);
+    deleteItem(itemToDelete.id, itemToDelete.endpoint);
     handleCloseModal();
   };
 
@@ -251,9 +240,7 @@ function Manage(): JSX.Element {
 
               {openSection === section.title &&
                 section.rows
-                  .sort((a, b) =>
-                    a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1
-                  )
+                  .filter((row) => row.isActive !== false)
                   .map((row, idx) => (
                     <tr
                       key={`${section.title}-${idx}`}
@@ -282,15 +269,11 @@ function Manage(): JSX.Element {
                               {loading === row.id ? "..." : "Editar"}
                             </Button>
                             <Button
-                              variant={
-                                row.isActive === false
-                                  ? "outline-success"
-                                  : "outline-danger"
-                              }
+                              variant="outline-danger"
                               size="sm"
                               disabled={loading === row.id}
                               onClick={() =>
-                                handleInactivationPrompt(
+                                handleDelete(
                                   row,
                                   section.title,
                                   section.endpoint
@@ -299,9 +282,7 @@ function Manage(): JSX.Element {
                             >
                               {loading === row.id
                                 ? "..."
-                                : row.isActive === false
-                                ? "Reativar"
-                                : "Inativar"}
+                                : "Excluir"}
                             </Button>
                           </div>
                         </div>
@@ -312,19 +293,15 @@ function Manage(): JSX.Element {
           ))}
         </tbody>
       </Table>
-      <Modal show={showInactivationModal} onHide={handleCloseModal} centered>
+      <Modal show={showDeletionModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>
           <Modal.Title style={{ color: "#Ec3239" }}>
-            Confirmar Inativação
+            Confirmar Exclusão
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>
-            Você tem certeza que deseja inativar *{itemToInactivate?.value}*?
-          </p>
-          <p className="text-muted small">
-            Este item será mantido no banco de dados e poderá ser reativado a
-            qualquer momento.
+            Você tem certeza que deseja excluir *{itemToDelete?.value}*?
           </p>
         </Modal.Body>
         <Modal.Footer>
@@ -337,10 +314,10 @@ function Manage(): JSX.Element {
           </Button>
           <Button
             variant="danger"
-            onClick={confirmInactivation}
+            onClick={confirmDeletion}
             disabled={false}
           >
-            Sim, Inativar
+            Sim, Excluir
           </Button>
         </Modal.Footer>
       </Modal>

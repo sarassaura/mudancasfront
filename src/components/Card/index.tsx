@@ -4,27 +4,29 @@ import { Button, Card } from "react-bootstrap";
 interface RequestCardProps {
   title: string;
   team: string;
-  startDate: string;
-  endDate: string;
+  packingDate: string;
+  takeoutDate: string;
+  deliveryDate: string;
   vehicle: string;
   description: string;
   onEdit: (id: string) => void;
-  onInactivate: (id: string, currentStatus: boolean) => void;
-  isActive?: boolean; 
+  onDelete: (id: string) => void;
   pedidoId: string;
+  cardColor: string;
 }
 
 function RequestCard({ 
   title, 
   team, 
-  startDate, 
-  endDate, 
+  packingDate, 
+  takeoutDate,
+  deliveryDate, 
   vehicle, 
   description, 
   onEdit, 
-  onInactivate, 
-  isActive = true, 
-  pedidoId 
+  onDelete, 
+  pedidoId,
+  cardColor
 }: RequestCardProps): JSX.Element {
   const descriptionStyle = {
     overflow: 'hidden',
@@ -34,13 +36,11 @@ function RequestCard({
   };
 
   const cardStyle = {
-    border: isActive ? '1px solid #DEE2E6' : '1px solid #ced4da',
+    border: '1px solid #DEE2E6',
     borderRadius: '12px', 
     padding: '24px', 
     width: '350px',
-    backgroundColor: isActive ? 'white' : '#f5f5f5',
-    opacity: isActive ? 1 : 0.85,
-    transition: 'all 0.3s ease',
+    backgroundColor: cardColor,
     display: 'flex',              
     flexDirection: 'column' as const,
     justifyContent: 'space-between',
@@ -51,24 +51,26 @@ function RequestCard({
       <div>
         <Card.Title className="fw-bold mb-4">
           {title}
-          {!isActive && <i className="bi bi-x-circle-fill text-danger ms-2" title="Inativo"></i>}
         </Card.Title>
 
-        <div className="d-flex justify-content-between mb-4">
-          <span className="text-secondary">
-            Início: <span className="text-secondary">{startDate}</span>
+        <div className="d-flex justify-content-center gap-4 mb-4 text-secondary">
+          <span>
+            Embalagem: <span>{packingDate}</span>
           </span>
-          <span className="text-secondary">
-            Fim: <span className="text-secondary">{endDate}</span>
+          <span>
+            Retirada: <span>{takeoutDate}</span>
+          </span>
+          <span>
+            Entrega: <span>{deliveryDate}</span>
           </span>
         </div>
 
         <p className="mb-3 text-secondary">
-          Equipe: <span className="text-secondary">{team}</span>
+          Equipe: <span>{team}</span>
         </p>
 
         <p className="mb-3 text-secondary">
-          Veículo: <span className="text-secondary">{vehicle}</span>
+          Veículo: <span>{vehicle}</span>
         </p>
 
         <Card.Text className="text-secondary" style={descriptionStyle}>
@@ -81,17 +83,15 @@ function RequestCard({
           variant="outline-primary" 
           size="sm" 
           onClick={() => onEdit(pedidoId)}
-          disabled={!isActive}    
         >
           <i className="bi bi-pencil-square me-1"></i> Editar
         </Button>
         <Button 
-          variant={isActive ? "outline-danger" : "outline-success"} 
           size="sm" 
-          onClick={() => onInactivate(pedidoId, isActive)}
+          variant="outline-danger" 
+          onClick={() => onDelete(pedidoId)}
         >
-          <i className={`bi ${isActive ? "bi-x-circle" : "bi-check-circle"} me-1`}></i> 
-          {isActive ? 'Inativar' : 'Reativar'}
+          <i className="bi bi-x-circle me-1"></i>  Excluir
         </Button>
       </div>
     </div>

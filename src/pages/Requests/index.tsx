@@ -1,12 +1,14 @@
-import { useState, type JSX, useEffect } from "react";
-import { Form, InputGroup } from "react-bootstrap";
+import { useState, type JSX, useEffect, useMemo } from "react";
+import { Form, InputGroup, Badge } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { showError } from "../../components/ToastAlerts/ShowError";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
-import type { DadosPedido, Equipe, Veiculo } from "../../types";
+import type { DadosPedido, Equipe, Veiculo } from "../../types"; 
 import CustomButton from "../../components/CustomButton";
+
+type CollaboratorMap = { [id: string]: string };
 
 function Requests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -14,24 +16,38 @@ function Requests(): JSX.Element {
   const location = useLocation();
   const editId = location.state?.editId;
   const isEditMode = Boolean(editId);
-  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
+  const [packingDate, setPackingDate] = useState<Date | null>(null);
   const [takeoutDate, setTakeoutDate] = useState<Date | null>(null);
+  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
 
   const [formData, setFormData] = useState<DadosPedido>({
     titulo: "",
-    data_entrega: "",
+    data_embalagem: "",
     data_retirada: "",
+    data_entrega: "",
     equipe: "",
+    funcionario: [],
+    autonomo: [],
     veiculo: "",
     descricao: "",
-    status: "em-andamento",
   });
 
   const [equipes, setEquipes] = useState<Equipe[]>([]);
+  const [funcionarios, setFuncionarios] = useState<Equipe[]>([]);
+  const [autonomos, setAutonomos] = useState<Equipe[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+
+  const funcMap: CollaboratorMap = useMemo(() => 
+    funcionarios.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.nome }), {}), 
+    [funcionarios]
+  );
+  const autoMap: CollaboratorMap = useMemo(() => 
+    autonomos.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.nome }), {}), 
+    [autonomos]
+  );
 
   useEffect(() => {
     const fetchPedidoData = async () => {
@@ -46,14 +62,26 @@ function Requests(): JSX.Element {
 
           const pedidoData = await response.json();
 
+          const getIdsArray = (data: any): string[] => {
+            if (Array.isArray(data)) {
+              return data.map(item => item._id || item); 
+            }
+            if (data && (data._id || data)) {
+              return [data._id || data];
+            }
+            return [];
+          };
+
           setFormData({
             titulo: pedidoData.titulo || "",
+            data_embalagem: pedidoData.data_embalagem || "",
             data_entrega: pedidoData.data_entrega || "",
             data_retirada: pedidoData.data_retirada || "",
             equipe: pedidoData.equipe?._id || pedidoData.equipe || "",
+            funcionario: getIdsArray(pedidoData.funcionario),
+            autonomo: getIdsArray(pedidoData.autonomo),
             veiculo: pedidoData.veiculo?._id || pedidoData.veiculo || "",
             descricao: pedidoData.descricao || "",
-            status: pedidoData.status || "em-andamento",
           });
         } catch (error) {
           showError("Erro ao carregar dados para edição");
@@ -70,12 +98,26 @@ function Requests(): JSX.Element {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const equipesResponse = await fetch(`${API_BASE_URL}/equipes`);
-        const equipesData = await equipesResponse.json();
-        setEquipes(equipesData);
+        const [
+          equipesResponse,
+          funcionariosResponse,
+          autonomosResponse,
+          veiculosResponse,
+        ] = await Promise.all([
+          fetch(`${API_BASE_URL}/equipes`),
+          fetch(`${API_BASE_URL}/funcionarios`),
+          fetch(`${API_BASE_URL}/autonomos`),
+          fetch(`${API_BASE_URL}/veiculos`),
+        ]);
 
-        const veiculosResponse = await fetch(`${API_BASE_URL}/veiculos`);
+        const equipesData = await equipesResponse.json();
+        const funcionariosData = await funcionariosResponse.json();
+        const autonomosData = await autonomosResponse.json();
         const veiculosData = await veiculosResponse.json();
+
+        setEquipes(equipesData);
+        setFuncionarios(funcionariosData);
+        setAutonomos(autonomosData);
         setVeiculos(veiculosData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -90,28 +132,38 @@ function Requests(): JSX.Element {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    if (name !== "funcionario" && name !== "autonomo") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const equipesResponse = await fetch(`${API_BASE_URL}/equipes`);
-        const equipesData = await equipesResponse.json();
-        setEquipes(equipesData);
+  const handleInputSelection = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+    field: "funcionario" | "autonomo"
+  ) => {
+    const selectedId = e.target.value;
+    if (selectedId && !formData[field].includes(selectedId)) {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: [...prev[field], selectedId],
+      }));
+    }
+    e.target.value = "";
+  };
 
-        const veiculosResponse = await fetch(`${API_BASE_URL}/veiculos`);
-        const veiculosData = await veiculosResponse.json();
-        setVeiculos(veiculosData);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      }
-    };
-    fetchData();
-  }, [API_BASE_URL]);
+  const handleRemoveCollaborator = (
+    idToRemove: string,
+    field: "funcionario" | "autonomo"
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((id) => id !== idToRemove),
+    }));
+  };
 
   const formatDateToString = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, "0");
@@ -119,14 +171,15 @@ function Requests(): JSX.Element {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
   useEffect(() => {
-    if (deliveryDate) {
+    if (packingDate) {
       setFormData((prev) => ({
         ...prev,
-        data_entrega: formatDateToString(deliveryDate),
+        data_embalagem: formatDateToString(packingDate),
       }));
     }
-  }, [deliveryDate]);
+  }, [packingDate]);
 
   useEffect(() => {
     if (takeoutDate) {
@@ -137,12 +190,22 @@ function Requests(): JSX.Element {
     }
   }, [takeoutDate]);
 
+  useEffect(() => {
+    if (deliveryDate) {
+      setFormData((prev) => ({
+        ...prev,
+        data_entrega: formatDateToString(deliveryDate),
+      }));
+    }
+  }, [deliveryDate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (
       !formData.titulo ||
+      !formData.data_embalagem ||
       !formData.data_entrega ||
       !formData.data_retirada ||
       !formData.equipe ||
@@ -153,16 +216,22 @@ function Requests(): JSX.Element {
       return;
     }
 
+    if (formData.funcionario.length === 0 && formData.autonomo.length === 0) {
+      showError("O pedido deve ter pelo menos um Funcionário ou um Autônomo.");
+      setLoading(false);
+      return;
+    }
+
     try {
       let response;
-
+      const dataToSend = formData;
       if (isEditMode) {
         response = await fetch(`${API_BASE_URL}/pedidos/${editId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(dataToSend),
         });
       } else {
         response = await fetch(`${API_BASE_URL}/pedidos`, {
@@ -170,7 +239,7 @@ function Requests(): JSX.Element {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(dataToSend),
         });
       }
 
@@ -204,6 +273,42 @@ function Requests(): JSX.Element {
       navigate("/cadastrar");
     }
   };
+
+  const CollaboratorChips = ({ 
+    ids, 
+    map, 
+    field 
+  }: { 
+    ids: string[], 
+    map: CollaboratorMap, 
+    field: "funcionario" | "autonomo" 
+  }) => (
+    <div className="d-flex flex-wrap gap-2 mt-2">
+      {ids.map((id) => (
+        <Badge 
+          key={id} 
+          className="d-flex align-items-center p-2 rounded-pill bg-white text-secondary border border-secondary"
+          style={{ 
+            cursor: "pointer", 
+            backgroundColor: "white !important", 
+            fontFamily: 'Segoe UI, sans-serif', 
+            fontWeight: 'normal', 
+            fontSize: '14px',
+          }}
+          onClick={() => handleRemoveCollaborator(id, field)}
+        >
+          {map[id] || 'Nome Desconhecido'}
+          <i 
+            className="bi bi-x-circle-fill ms-2" 
+            style={{ 
+              fontSize: '0.9em',
+              color: "currentColor"
+            }}
+          ></i>
+        </Badge>
+      ))}
+    </div>
+  );
 
   if (fetching) {
     return (
@@ -241,15 +346,15 @@ function Requests(): JSX.Element {
             />
           </Form.Group>
 
-          <Form.Group controlId="formGridDeliveryDate" className="col-6">
-            <Form.Label>Data da Entrega</Form.Label>
+          <Form.Group controlId="formGridPackingDate" className="col-4">
+            <Form.Label>Data da Embalagem</Form.Label>
             <InputGroup className="flex-nowrap">
               <InputGroup.Text>
                 <i className="bi bi-calendar-week"></i>
               </InputGroup.Text>
               <DatePicker
-                selected={deliveryDate}
-                onChange={(date) => setDeliveryDate(date)}
+                selected={packingDate}
+                onChange={(date) => setPackingDate(date)}
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0"
                 placeholderText="dd/mm/aaaa"
@@ -258,7 +363,7 @@ function Requests(): JSX.Element {
             </InputGroup>
           </Form.Group>
 
-          <Form.Group controlId="formGridTakeoutDate" className="col-6">
+          <Form.Group controlId="formGridTakeoutDate" className="col-4">
             <Form.Label>Data da Retirada</Form.Label>
             <InputGroup className="flex-nowrap">
               <InputGroup.Text>
@@ -267,6 +372,23 @@ function Requests(): JSX.Element {
               <DatePicker
                 selected={takeoutDate}
                 onChange={(date) => setTakeoutDate(date)}
+                dateFormat="dd/MM/yyyy"
+                className="form-control rounded-start-0"
+                placeholderText="dd/mm/aaaa"
+                disabled={loading || fetching}
+              />
+            </InputGroup>
+          </Form.Group>
+
+          <Form.Group controlId="formGridDeliveryDate" className="col-4">
+            <Form.Label>Data da Entrega</Form.Label>
+            <InputGroup className="flex-nowrap">
+              <InputGroup.Text>
+                <i className="bi bi-calendar-week"></i>
+              </InputGroup.Text>
+              <DatePicker
+                selected={deliveryDate}
+                onChange={(date) => setDeliveryDate(date)}
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0"
                 placeholderText="dd/mm/aaaa"
@@ -288,7 +410,7 @@ function Requests(): JSX.Element {
               onChange={handleInputChange}
               disabled={loading || fetching}
             >
-              <option value="">Digite a equipe do Pedido</option>
+              <option value="">Selecione a Equipe</option>
               {equipes.map((equipe) => (
                 <option key={equipe._id} value={equipe._id}>
                   {equipe.nome}
@@ -296,6 +418,64 @@ function Requests(): JSX.Element {
               ))}
             </Form.Select>
           </InputGroup>
+        </Form.Group>
+
+        <Form.Group className="mb-3" controlId="formGridFuncionarios">
+          <Form.Label>Funcionários</Form.Label>
+          <InputGroup>
+            <InputGroup.Text>
+              <i className="bi bi-person-fill"></i>
+            </InputGroup.Text>
+            <Form.Select
+              name="funcionario"
+              value="" 
+              onChange={(e) => handleInputSelection(e, "funcionario")}
+              disabled={loading || fetching}
+            >
+              <option value="" disabled>Selecione o(s) Funcionário(s)</option>
+              {funcionarios
+                .filter(f => !formData.funcionario.includes(f._id))
+                .map((funcionario) => (
+                  <option key={funcionario._id} value={funcionario._id}>
+                    {funcionario.nome}
+                  </option>
+                ))}
+            </Form.Select>
+          </InputGroup>
+          <CollaboratorChips 
+            ids={formData.funcionario} 
+            map={funcMap} 
+            field="funcionario" 
+          />
+        </Form.Group>
+
+        <Form.Group className="mb-3" controlId="formGridAutonomos">
+          <Form.Label>Autônomos</Form.Label>
+          <InputGroup>
+            <InputGroup.Text>
+              <i className="bi bi-person-fill"></i>
+            </InputGroup.Text>
+            <Form.Select
+              name="autonomo"
+              value=""
+              onChange={(e) => handleInputSelection(e, "autonomo")}
+              disabled={loading || fetching}
+            >
+              <option value="" disabled>Selecione o(s) Autônomo(s)</option>
+              {autonomos
+                .filter(a => !formData.autonomo.includes(a._id))
+                .map((autonomo) => (
+                  <option key={autonomo._id} value={autonomo._id}>
+                    {autonomo.nome}
+                  </option>
+                ))}
+            </Form.Select>
+          </InputGroup>
+          <CollaboratorChips 
+            ids={formData.autonomo} 
+            map={autoMap} 
+            field="autonomo" 
+          />
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="formGridVehicle">
@@ -310,7 +490,7 @@ function Requests(): JSX.Element {
               onChange={handleInputChange}
               disabled={loading || fetching}
             >
-              <option value="">Digite o veículo do Pedido</option>
+              <option value="">Selecione o Veículo</option>
               {veiculos.map((veiculo) => (
                 <option key={veiculo._id} value={veiculo._id}>
                   {veiculo.nome}

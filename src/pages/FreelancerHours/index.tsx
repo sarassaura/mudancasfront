@@ -11,8 +11,9 @@ import CustomButton from "../../components/CustomButton";
 interface HourEntry {
   id: number;
   date: Date | null;
-  hours: number;
+  days: number;
   overnight: boolean;
+  extra: boolean;
 }
 
 const DayRow = ({
@@ -26,76 +27,92 @@ const DayRow = ({
     value: Date | null | number | boolean
   ) => void;
 }) => (
-  <div
-    className="row mb-3 g-3 align-items-end justify-content-center text-center"
-    key={entry.id}
-  >
-    <Form.Group controlId={`date-${entry.id}`} className="col-12 col-md-5">
-      <Form.Label>Data</Form.Label>
-      <InputGroup className="d-flex justify-content-center justify-content-md-start">
-        <InputGroup.Text>
-          <i className="bi bi-calendar-week"></i>
-        </InputGroup.Text>
-        <div className="col-md-8">
-          <DatePicker
-            selected={entry.date}
-            onChange={(date) => updateEntry(entry.id, "date", date)}
-            dateFormat="dd/MM/yyyy"
-            className="form-control rounded-start-0 w-100"
-            placeholderText="dd/mm/aaaa"
-          />
-        </div>
-      </InputGroup>
-    </Form.Group>
-
-    <Form.Group controlId={`hours-${entry.id}`} className="col-12 col-md-4">
-      <Form.Label>Horas no dia</Form.Label>
-      <InputGroup>
-        <Button
-          variant="outline-secondary"
-          onClick={() =>
-            updateEntry(entry.id, "hours", Math.max(0, entry.hours - 1))
-          }
-          className="rounded-start-2"
-        >
-          <i className="bi bi-dash"></i>
-        </Button>
-        <Form.Control
-          type="text"
-          value={`${entry.hours}h`}
-          readOnly
-          className="text-center"
-        />
-        <Button
-          variant="outline-secondary"
-          onClick={() => updateEntry(entry.id, "hours", entry.hours + 1)}
-          className="rounded-end-2"
-        >
-          <i className="bi bi-plus"></i>
-        </Button>
-      </InputGroup>
-    </Form.Group>
-
-    <Form.Group
-      controlId={`overnight-${entry.id}`}
-      className="col-12 col-md-3 d-flex flex-column align-items-center"
+  <>
+    <div
+      className="row mb-3 g-3 align-items-end justify-content-between text-center"
+      key={entry.id}
     >
-      <Form.Label>Pernoite?</Form.Label>
-      <Form.Check
-        type="checkbox"
-        checked={entry.overnight}
-        onChange={(e) => updateEntry(entry.id, "overnight", e.target.checked)}
-        style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
-      />
-    </Form.Group>
-  </div>
+      <Form.Group controlId={`date-${entry.id}`} className="col-12 col-md-5">
+        <Form.Label>Data</Form.Label>
+        <InputGroup className="d-flex justify-content-center justify-content-md-start">
+          <InputGroup.Text>
+            <i className="bi bi-calendar-week"></i>
+          </InputGroup.Text>
+          <div className="col-md-8">
+            <DatePicker
+              selected={entry.date}
+              onChange={(date) => updateEntry(entry.id, "date", date)}
+              dateFormat="dd/MM/yyyy"
+              className="form-control rounded-start-0 w-100"
+              placeholderText="dd/mm/aaaa"
+            />
+          </div>
+        </InputGroup>
+      </Form.Group>
+
+      <Form.Group
+        controlId={`overnight-${entry.id}`}
+        className="col-12 col-md-3 d-flex flex-column align-items-center"
+      >
+        <Form.Label>Pernoite?</Form.Label>
+        <Form.Check
+          type="checkbox"
+          checked={entry.overnight}
+          onChange={(e) => updateEntry(entry.id, "overnight", e.target.checked)}
+          style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
+        />
+      </Form.Group>
+    </div>
+    <div className="row mb-3 g-3 align-items-end justify-content-between text-center" key={entry.id}>
+      <Form.Group controlId={`hours-${entry.id}`} className="col-12 col-md-4">
+        <Form.Label>Diárias</Form.Label>
+        <InputGroup>
+          <Button
+            variant="outline-secondary"
+            onClick={() =>
+              updateEntry(entry.id, "days", Math.max(0, entry.days - 1))
+            }
+            className="rounded-start-2"
+          >
+            <i className="bi bi-dash"></i>
+          </Button>
+          <Form.Control
+            type="text"
+            value={`${entry.days}`}
+            readOnly
+            className="text-center"
+          />
+          <Button
+            variant="outline-secondary"
+            onClick={() => updateEntry(entry.id, "days", entry.days + 1)}
+            className="rounded-end-2"
+          >
+            <i className="bi bi-plus"></i>
+          </Button>
+        </InputGroup>
+      </Form.Group>
+
+      <Form.Group
+        controlId={`extra-${entry.id}`}
+        className="col-12 col-md-3 d-flex flex-column align-items-center"
+      >
+        <Form.Label>Extra?</Form.Label>
+        <Form.Check
+          type="checkbox"
+          checked={entry.extra}
+          onChange={(e) => updateEntry(entry.id, "extra", e.target.checked)}
+          style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
+        />
+      </Form.Group>
+    </div>
+  </>
 );
 
 function FreelancerHours(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
-    { id: 1, date: null, hours: 3, overnight: false },
+    { id: 1, date: null, days: 3, overnight: false, extra: false },
   ]);
 
   const [autonomos, setAutonomos] = useState<Autonomo[]>([]);
@@ -118,7 +135,7 @@ function FreelancerHours(): JSX.Element {
 
   const handleAddDay = () => {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;
-    setDays([...days, { id: newId, date: null, hours: 0, overnight: false }]);
+    setDays([...days, { id: newId, date: null, days: 0, overnight: false, extra: false }]);
   };
 
   const updateDayEntry = (
@@ -159,10 +176,10 @@ function FreelancerHours(): JSX.Element {
         if (day.date) {
           const dadosParaEnviar: DadosHorasAutonomo = {
             data: formatDateToString(day.date),
-            hora: day.hours.toString(),
+            dias: day.days.toString(),
             autonomo: selectedAutonomo,
             pernoite: day.overnight,
-            status: "ativo",
+            extra: day.extra,
           };
 
           console.log("Enviando:", dadosParaEnviar);
@@ -182,11 +199,11 @@ function FreelancerHours(): JSX.Element {
         }
       }
 
-      showSuccess("Horas cadastradas com sucesso!");
+      showSuccess("Dias cadastrados com sucesso!");
       setSelectedAutonomo("");
-      setDays([{ id: 1, date: null, hours: 3, overnight: false }]);
+      setDays([{ id: 1, date: null, days: 3, overnight: false, extra: false }]);
     } catch (error) {
-      showError("Erro ao cadastrar horas");
+      showError("Erro ao cadastrar os dias");
       console.error("Erro:", error);
     } finally {
       setLoading(false);

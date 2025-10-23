@@ -17,7 +17,6 @@ function Freelancers(): JSX.Element {
 
   const [formData, setFormData] = useState<DadosAutonomo>({
     nome: "",
-    status: "ativo",
   });
 
   const [loading, setLoading] = useState(false);
@@ -37,7 +36,6 @@ function Freelancers(): JSX.Element {
           const autonomoData = await response.json();
           setFormData({
             nome: autonomoData.nome || "",
-            status: autonomoData.status || "ativo",
           });
         } catch (error) {
           showError("Erro ao carregar dados para edição");
