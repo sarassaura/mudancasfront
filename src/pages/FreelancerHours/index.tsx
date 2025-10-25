@@ -11,7 +11,6 @@ import CustomButton from "../../components/CustomButton";
 interface HourEntry {
   id: number;
   date: Date | null;
-  days: number;
   overnight: boolean;
   extra: boolean;
 }
@@ -62,36 +61,6 @@ const DayRow = ({
           style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
         />
       </Form.Group>
-    </div>
-    <div className="row mb-3 g-3 align-items-end justify-content-between text-center" key={entry.id}>
-      <Form.Group controlId={`hours-${entry.id}`} className="col-12 col-md-4">
-        <Form.Label>Diárias</Form.Label>
-        <InputGroup>
-          <Button
-            variant="outline-secondary"
-            onClick={() =>
-              updateEntry(entry.id, "days", Math.max(0, entry.days - 1))
-            }
-            className="rounded-start-2"
-          >
-            <i className="bi bi-dash"></i>
-          </Button>
-          <Form.Control
-            type="text"
-            value={`${entry.days}`}
-            readOnly
-            className="text-center"
-          />
-          <Button
-            variant="outline-secondary"
-            onClick={() => updateEntry(entry.id, "days", entry.days + 1)}
-            className="rounded-end-2"
-          >
-            <i className="bi bi-plus"></i>
-          </Button>
-        </InputGroup>
-      </Form.Group>
-
       <Form.Group
         controlId={`extra-${entry.id}`}
         className="col-12 col-md-3 d-flex flex-column align-items-center"
@@ -112,7 +81,7 @@ function FreelancerHours(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
-    { id: 1, date: null, days: 3, overnight: false, extra: false },
+    { id: 1, date: null, overnight: false, extra: false },
   ]);
 
   const [autonomos, setAutonomos] = useState<Autonomo[]>([]);
@@ -135,7 +104,7 @@ function FreelancerHours(): JSX.Element {
 
   const handleAddDay = () => {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;
-    setDays([...days, { id: newId, date: null, days: 0, overnight: false, extra: false }]);
+    setDays([...days, { id: newId, date: null, overnight: false, extra: false }]);
   };
 
   const updateDayEntry = (
@@ -176,7 +145,6 @@ function FreelancerHours(): JSX.Element {
         if (day.date) {
           const dadosParaEnviar: DadosHorasAutonomo = {
             data: formatDateToString(day.date),
-            dias: day.days.toString(),
             autonomo: selectedAutonomo,
             pernoite: day.overnight,
             extra: day.extra,
@@ -201,7 +169,7 @@ function FreelancerHours(): JSX.Element {
 
       showSuccess("Dias cadastrados com sucesso!");
       setSelectedAutonomo("");
-      setDays([{ id: 1, date: null, days: 3, overnight: false, extra: false }]);
+      setDays([{ id: 1, date: null, overnight: false, extra: false }]);
     } catch (error) {
       showError("Erro ao cadastrar os dias");
       console.error("Erro:", error);
