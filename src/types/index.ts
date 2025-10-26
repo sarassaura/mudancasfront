@@ -52,7 +52,6 @@ export interface Autonomo {
 
 export interface DadosHorasAutonomo {
   data: string;
-  dias: string;
   autonomo: string;
   pernoite: boolean;
   extra: boolean;
