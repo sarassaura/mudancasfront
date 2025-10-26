@@ -10,8 +10,8 @@ export interface DadosPedido {
   data_retirada: string;
   data_entrega: string;
   equipe: string;
-  funcionario: string[];
-  autonomo: string[];
+  funcionario: string;
+  autonomo: string;
   veiculo: string;
   descricao?: string;
 }
@@ -35,6 +35,13 @@ export interface Veiculo {
 }
 
 export interface DadosFuncionario {
+  nome: string;
+  email: string;
+  senha: string;
+  equipe: string;
+}
+export interface Funcionario {
+  _id: string;
   nome: string;
   email: string;
   senha: string;

@@ -21,9 +21,23 @@ function Manage(): JSX.Element {
     sectionTitle: string;
     id: string;
     endpoint: string;
+    isPedido?: boolean;
+  } | null>(null);
+  const [showInactiveSection, setShowInactiveSection] = useState(false);
+  const [showReactivationModal, setShowReactivationModal] = useState(false);
+  const [itemToReactivate, setItemToReactivate] = useState<{
+    value: string;
+    sectionTitle: string;
+    id: string;
+    endpoint: string;
   } | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [sectionsData, setSectionsData] = useState<Section[]>([]);
+  const [openInactiveSection, setOpenInactiveSection] = useState<string | null>(
+    null
+  );
+  const [showPermanentDeleteModal, setShowPermanentDeleteModal] =
+    useState(false);
 
   const sectionsConfig = [
     {
@@ -80,7 +94,7 @@ function Manage(): JSX.Element {
       const rows = data.map((item: any) => ({
         value: item.nome || item.titulo,
         id: item._id,
-        isActive: item.status !== "excluído",
+        isActive: item.status !== "excluído" && item.status !== "inativado",
       }));
 
       return rows;
@@ -125,14 +139,29 @@ function Manage(): JSX.Element {
       setOpenSection(null);
     } else {
       setOpenSection(title);
+      setOpenInactiveSection(null);
       await reloadSection(endpoint, title);
     }
+  };
+
+  const handleToggleInactive = async (title: string, endpoint: string) => {
+    if (openInactiveSection === title) {
+      setOpenInactiveSection(null);
+    } else {
+      setOpenInactiveSection(title);
+      setOpenSection(null);
+      await reloadSection(endpoint, title);
+    }
+  };
+
+  const handleToggleInactiveSection = () => {
+    setShowInactiveSection(!showInactiveSection);
   };
 
   const handleEdit = (id: string, sectionTitle: string) => {
     const route = editRoutes[sectionTitle];
     if (route) {
-      navigate(route, { state: { editId: id } });
+      navigate(route, { state: { editId: id, fromManage: true } });
     } else {
       showError("Rota de edição não encontrada.");
     }
@@ -140,20 +169,29 @@ function Manage(): JSX.Element {
 
   const handleCloseModal = () => {
     setShowDeletionModal(false);
+    setShowReactivationModal(false);
     setItemToDelete(null);
+    setItemToReactivate(null);
+    setShowPermanentDeleteModal(false);
   };
 
   const deleteItem = async (id: string, endpoint: string) => {
     setLoading(id);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}/excluir`, {
-        method: "PATCH",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/${endpoint}/${id}/inativar`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         showSuccess("Item excluído com sucesso!");
-
+        await reloadAllSections();
         setSectionsData((prev) =>
           prev.map((section) =>
             section.endpoint === endpoint
@@ -167,6 +205,85 @@ function Manage(): JSX.Element {
       } else {
         const errorData = await response.json();
         showError(errorData.message || "Erro ao excluir item");
+      }
+    } catch (error) {
+      showError("Erro de conexão com o servidor.");
+      console.error("Erro:", error);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const reactivateItem = async (id: string, endpoint: string) => {
+    setLoading(id);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/${endpoint}/${id}/reativar`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        showSuccess("Item reativado com sucesso!");
+        await reloadAllSections();
+      } else {
+        const errorData = await response.json();
+        showError(errorData.message || "Erro ao reativar item");
+      }
+    } catch (error) {
+      showError("Erro de conexão com o servidor.");
+      console.error("Erro:", error);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const reloadAllSections = async () => {
+    const allSectionsData = await Promise.all(
+      sectionsConfig.map(async (config) => {
+        const rows = await fetchSectionData(config.endpoint, config.title);
+        return {
+          title: config.title,
+          rows,
+          isPedido: config.isPedido,
+          endpoint: config.endpoint,
+        };
+      })
+    );
+    setSectionsData(allSectionsData);
+  };
+
+  const deletePermanently = async (id: string, endpoint: string) => {
+    setLoading(id);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        showSuccess("Pedido excluído permanentemente com sucesso!");
+
+        setSectionsData((prev) =>
+          prev.map((section) =>
+            section.endpoint === endpoint
+              ? {
+                  ...section,
+                  rows: section.rows.filter((r) => r.id !== id),
+                }
+              : section
+          )
+        );
+      } else {
+        const errorData = await response.json();
+        showError(
+          errorData.message || "Erro ao excluir pedido permanentemente"
+        );
       }
     } catch (error) {
       showError("Erro de conexão com o servidor.");
@@ -190,6 +307,34 @@ function Manage(): JSX.Element {
     setShowDeletionModal(true);
   };
 
+  const handleReactivate = (
+    row: { value: string; id: string },
+    sectionTitle: string,
+    endpoint: string
+  ) => {
+    setItemToReactivate({
+      value: row.value,
+      sectionTitle,
+      id: row.id,
+      endpoint,
+    });
+    setShowReactivationModal(true);
+  };
+
+  const handlePermanentDelete = (
+    row: { value: string; id: string },
+    sectionTitle: string,
+    endpoint: string
+  ) => {
+    setItemToDelete({
+      value: row.value,
+      sectionTitle,
+      id: row.id,
+      endpoint,
+    });
+    setShowPermanentDeleteModal(true);
+  };
+
   const confirmDeletion = () => {
     if (!itemToDelete) {
       showError("Nenhum item selecionado para exclusão.");
@@ -198,6 +343,28 @@ function Manage(): JSX.Element {
     }
 
     deleteItem(itemToDelete.id, itemToDelete.endpoint);
+    handleCloseModal();
+  };
+
+  const confirmReactivation = () => {
+    if (!itemToReactivate) {
+      showError("Nenhum item selecionado para reativação.");
+      handleCloseModal();
+      return;
+    }
+
+    reactivateItem(itemToReactivate.id, itemToReactivate.endpoint);
+    handleCloseModal();
+  };
+
+  const confirmPermanentDeletion = () => {
+    if (!itemToDelete) {
+      showError("Nenhum item selecionado para exclusão.");
+      handleCloseModal();
+      return;
+    }
+
+    deletePermanently(itemToDelete.id, itemToDelete.endpoint);
     handleCloseModal();
   };
 
@@ -280,10 +447,27 @@ function Manage(): JSX.Element {
                                 )
                               }
                             >
-                              {loading === row.id
-                                ? "..."
-                                : "Excluir"}
+                              {loading === row.id ? "..." : "Excluir"}
                             </Button>
+
+                            {section.isPedido && (
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                disabled={loading === row.id}
+                                onClick={() =>
+                                  handlePermanentDelete(
+                                    row,
+                                    section.title,
+                                    section.endpoint
+                                  )
+                                }
+                              >
+                                {loading === row.id
+                                  ? "..."
+                                  : "Excluir Permanentemente"}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -291,8 +475,79 @@ function Manage(): JSX.Element {
                   ))}
             </>
           ))}
+
+          <tr key="itens-inativos" style={{ cursor: "pointer" }}>
+            <th
+              scope="row"
+              onClick={handleToggleInactiveSection}
+              className="bg-light"
+              style={{ color: "#Ec3239" }}
+            >
+              Itens Inativos
+            </th>
+          </tr>
+
+          {showInactiveSection &&
+            sectionsData.map((section) => (
+              <>
+                <tr
+                  key={`inactive-${section.title}`}
+                  style={{ cursor: "pointer" }}
+                >
+                  <th
+                    scope="row"
+                    onClick={() =>
+                      handleToggleInactive(section.title, section.endpoint)
+                    }
+                    className="bg-light ps-4"
+                    style={{ backgroundColor: "#f8f9fa" }}
+                  >
+                    {section.title}
+                  </th>
+                </tr>
+
+                {openInactiveSection === section.title &&
+                  section.rows
+                    .filter((row) => row.isActive === false)
+                    .map((row, idx) => (
+                      <tr
+                        key={`inactive-${section.title}-${idx}`}
+                        style={{ opacity: 0.7 }}
+                      >
+                        <td className="ps-5 ps-sm-5">
+                          <div className="d-flex justify-content-between align-items-center w-100">
+                            <span className="me-2">
+                              {row.value}
+                              <i
+                                className="bi bi-x-circle-fill text-danger ms-2"
+                                title="Inativo"
+                              ></i>
+                            </span>
+                            <div className="d-flex gap-2">
+                              <Button
+                                variant="outline-success"
+                                size="sm"
+                                disabled={loading === row.id}
+                                onClick={() =>
+                                  handleReactivate(
+                                    row,
+                                    section.title,
+                                    section.endpoint
+                                  )
+                                }
+                              >
+                                {loading === row.id ? "..." : "Reativar"}
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+              </>
+            ))}
         </tbody>
       </Table>
+
       <Modal show={showDeletionModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>
           <Modal.Title style={{ color: "#Ec3239" }}>
@@ -300,8 +555,12 @@ function Manage(): JSX.Element {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>
-            Você tem certeza que deseja excluir *{itemToDelete?.value}*?
+          <p>Você tem certeza que deseja excluir *{itemToDelete?.value}*?</p>
+
+          <p className="text-muted">
+            {itemToDelete?.sectionTitle === "Pedidos"
+              ? "O pedido será removido da visualização, mas os dados serão mantidos no banco."
+              : "O item será excluído e removido da visualização, mas os dados serão mantidos no banco."}
           </p>
         </Modal.Body>
         <Modal.Footer>
@@ -312,12 +571,66 @@ function Manage(): JSX.Element {
           >
             Cancelar
           </Button>
+          <Button variant="danger" onClick={confirmDeletion}>
+            Sim, Excluir
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showPermanentDeleteModal} onHide={handleCloseModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title style={{ color: "#Ec3239" }}>
+            Excluir Permanentemente
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="alert alert-danger">
+            <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+          </div>
+          <p>
+            Você tem certeza que deseja excluir permanentemente o pedido:
+            <strong> {itemToDelete?.value}</strong>?
+          </p>
+          <p className="text-muted">
+            Todos os dados deste pedido serão permanentemente removidos do banco
+            de dados.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Cancelar
+          </Button>
           <Button
             variant="danger"
-            onClick={confirmDeletion}
+            onClick={confirmPermanentDeletion}
             disabled={false}
           >
-            Sim, Excluir
+            "Sim, Excluir Permanentemente"
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showReactivationModal} onHide={handleCloseModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title style={{ color: "#Ec3239" }}>
+            Confirmar Reativação
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Você tem certeza que deseja reativar{" "}
+            <strong>{itemToReactivate?.value}</strong>?
+          </p>
+          <p className="text-muted">
+            O item voltará a aparecer nas listas ativas do sistema.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Cancelar
+          </Button>
+          <Button variant="success" onClick={confirmReactivation}>
+            Sim, Reativar
           </Button>
         </Modal.Footer>
       </Modal>
