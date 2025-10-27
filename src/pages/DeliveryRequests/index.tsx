@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import { showError } from "../../components/ToastAlerts/ShowError";
+import type { Equipe, Veiculo, Funcionario, Autonomo } from "../../types";
 
 interface Pedidos {
   _id: string;
@@ -12,25 +13,23 @@ interface Pedidos {
   data_embalagem: string;
   data_entrega: string;
   data_retirada: string;
-  equipe: {
-    _id: string;
-    nome: string;
-  };
-  veiculo: {
-    _id: string;
-    nome: string;
-  };
+  equipe: Equipe;
+  funcionario: Funcionario;
+  autonomo: Autonomo;
+  veiculo: Veiculo;
   descricao?: string;
+  status?: string;
 }
 
 interface ConsolidatedCardItem {
-  _id: string;   titulo: string;
-  equipe: Pedidos["equipe"];
-  veiculo: Pedidos["veiculo"];
+  _id: string;
+  titulo: string;
+  equipe: Equipe;
+  veiculo: Veiculo;
   descricao?: string;
-  data_foco: string; 
+  data_foco: string;
   tipos_evento: ("Embalagem" | "Retirada" | "Entrega")[];
-  card_key: string; 
+  card_key: string;
 }
 
 const COLOR_OPTIONS = ["#E0F7FA", "#fff0f0"];
@@ -56,13 +55,13 @@ const parseDateToLocal = (dateString: string): Date | null => {
 const expandPedidosToConsolidatedCardItems = (
   pedidos: Pedidos[]
 ): ConsolidatedCardItem[] => {
-  const consolidatedMap = new Map<
-    string,
-    ConsolidatedCardItem
-  >();
+  const consolidatedMap = new Map<string, ConsolidatedCardItem>();
 
   pedidos.forEach((pedido) => {
-    const events: { date: string; type: "Embalagem" | "Retirada" | "Entrega" }[] = [];
+    const events: {
+      date: string;
+      type: "Embalagem" | "Retirada" | "Entrega";
+    }[] = [];
 
     if (pedido.data_embalagem) {
       events.push({ date: pedido.data_embalagem, type: "Embalagem" });
@@ -75,7 +74,7 @@ const expandPedidosToConsolidatedCardItems = (
     }
 
     events.forEach((event) => {
-      const key = `${pedido._id}-${event.date}`; 
+      const key = `${pedido._id}-${event.date}`;
 
       if (consolidatedMap.has(key)) {
         const existingCard = consolidatedMap.get(key)!;
@@ -98,7 +97,6 @@ const expandPedidosToConsolidatedCardItems = (
   });
   return Array.from(consolidatedMap.values());
 };
-
 
 const filterCardItems = (
   data: ConsolidatedCardItem[],
@@ -145,19 +143,21 @@ function DeliveryRequests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const contentRef = useRef<HTMLDivElement>(null);
   const [rawData, setRawData] = useState<Pedidos[]>([]);
-  const [allFilteredCardItems, setAllFilteredCardItems] = useState<ConsolidatedCardItem[]>( 
-    []
-  );
+  const [allFilteredCardItems, setAllFilteredCardItems] = useState<
+    ConsolidatedCardItem[]
+  >([]);
   const [selectedDay, setSelectedDay] = useState<number | "">("");
   const [selectedMonth, setSelectedMonth] = useState<number | "">("");
   const [selectedYear, setSelectedYear] = useState<number | "">("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [loading, setLoading] = useState(true);
-  const [selectedPedido, setSelectedPedido] = useState<Pedidos | null>(null); 
+  const [selectedPedido, setSelectedPedido] = useState<Pedidos | null>(null);
   const [showModal, setShowModal] = useState(false);
-  
-  const [dayColorMap, setDayColorMap] = useState<Map<string, string>>(new Map());
+
+  const [dayColorMap, setDayColorMap] = useState<Map<string, string>>(
+    new Map()
+  );
 
   const navigate = useNavigate();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -181,7 +181,7 @@ function DeliveryRequests(): JSX.Element {
     navigate("/pedidos", {
       state: {
         editId: id,
-        fromManage: true,
+        fromDeliveryRequests: true,
       },
     });
   };
@@ -209,11 +209,11 @@ function DeliveryRequests(): JSX.Element {
     }
   };
 
-  const handleOpenModal = (cardItem: ConsolidatedCardItem) => { 
-    const originalPedido = rawData.find(p => p._id === cardItem._id)
+  const handleOpenModal = (cardItem: ConsolidatedCardItem) => {
+    const originalPedido = rawData.find((p) => p._id === cardItem._id);
     if (originalPedido) {
-        setSelectedPedido(originalPedido);
-        setShowModal(true);
+      setSelectedPedido(originalPedido);
+      setShowModal(true);
     }
   };
 
@@ -230,14 +230,15 @@ function DeliveryRequests(): JSX.Element {
         setRawData(data);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error("Erro ao buscar pedidos:", err);
+      .catch((error) => {
+        console.error("Erro ao buscar pedidos:", error);
         setLoading(false);
       });
   }, [API_BASE_URL]);
 
   useEffect(() => {
-    const allConsolidatedCardItems = expandPedidosToConsolidatedCardItems(rawData);
+    const allConsolidatedCardItems =
+      expandPedidosToConsolidatedCardItems(rawData);
 
     const newFiltered = filterCardItems(
       allConsolidatedCardItems,
@@ -270,12 +271,12 @@ function DeliveryRequests(): JSX.Element {
     setDayColorMap(newDayColorMap);
     setAllFilteredCardItems(sortedFiltered);
     setCurrentPage(1);
-  }, [rawData, selectedDay, selectedMonth, selectedYear]); 
+  }, [rawData, selectedDay, selectedMonth, selectedYear]);
 
   const getCardColor = (dateString: string): string => {
-      return dayColorMap.get(dateString) || COLOR_OPTIONS[0]; 
+    return dayColorMap.get(dateString) || COLOR_OPTIONS[0];
   };
-  
+
   const handleExportPDF = () => {
     const element = contentRef.current;
     if (!element) return;
@@ -448,37 +449,37 @@ function DeliveryRequests(): JSX.Element {
         <div className="d-flex flex-wrap justify-content-center gap-4 mb-5">
           {currentData.map((cardItem) => (
             <div
-              key={cardItem.card_key} 
+              key={cardItem.card_key}
               onClick={() => handleOpenModal(cardItem)}
               style={{ cursor: "pointer" }}
             >
               <RequestCard
                 key={cardItem.card_key}
                 pedidoId={cardItem._id}
-                title={`[${([cardItem.tipos_evento.join('/')])}] ${ 
+                title={`[${[cardItem.tipos_evento.join("/")]}] ${
                   cardItem.titulo || "Pedido Sem Título"
                 }`}
                 team={cardItem.equipe.nome}
                 packingDate={
-                    cardItem.tipos_evento.includes("Embalagem")
-                      ? cardItem.data_foco
-                      : "---"
+                  cardItem.tipos_evento.includes("Embalagem")
+                    ? cardItem.data_foco
+                    : "---"
                 }
                 takeoutDate={
-                    cardItem.tipos_evento.includes("Retirada")
-                      ? cardItem.data_foco
-                      : "---"
+                  cardItem.tipos_evento.includes("Retirada")
+                    ? cardItem.data_foco
+                    : "---"
                 }
                 deliveryDate={
-                    cardItem.tipos_evento.includes("Entrega")
-                      ? cardItem.data_foco
-                      : "---"
+                  cardItem.tipos_evento.includes("Entrega")
+                    ? cardItem.data_foco
+                    : "---"
                 }
                 vehicle={cardItem.veiculo.nome}
                 description={cardItem.descricao ?? ""}
                 onEdit={() => handleEditRequest(cardItem._id)}
                 onDelete={() => handleDeleteRequest(cardItem._id)}
-                cardColor={getCardColor(cardItem.data_foco)} 
+                cardColor={getCardColor(cardItem.data_foco)}
               />
             </div>
           ))}

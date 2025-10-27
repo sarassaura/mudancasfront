@@ -104,7 +104,10 @@ function FreelancerHours(): JSX.Element {
 
   const handleAddDay = () => {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;
-    setDays([...days, { id: newId, date: null, overnight: false, extra: false }]);
+    setDays([
+      ...days,
+      { id: newId, date: null, overnight: false, extra: false },
+    ]);
   };
 
   const updateDayEntry = (
@@ -184,7 +187,7 @@ function FreelancerHours(): JSX.Element {
         className="h1 fw-bold text-center w-100 mt-3"
         style={{ color: "#Ec3239" }}
       >
-        Cadastro de Horas Autônomos
+        Cadastro de Diárias de Autônomos
       </h1>
       <Form
         className="mx-auto w-100"
@@ -224,7 +227,7 @@ function FreelancerHours(): JSX.Element {
             disabled={loading}
           >
             <i className="bi bi-plus-square me-2 h4 mt-1"></i>
-            Adicionar Dias
+            Adicionar Mais Diárias
           </Button>
         </div>
 

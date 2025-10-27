@@ -6,7 +6,6 @@ import html2pdf from "html2pdf.js";
 interface Premiacoes {
   _id: string;
   data: string;
-  dias: string;
   autonomo: {
     _id: string;
     nome: string;
@@ -47,7 +46,6 @@ const aggregateAwardsData = (data: Premiacoes[]): AwardEntry[] => {
 
   data.forEach((entry) => {
     const autonomoId = entry.autonomo._id;
-    const days = parseInt(entry.dias, 10) || 0;
 
     if (!aggregated[autonomoId]) {
       aggregated[autonomoId] = {
@@ -59,7 +57,7 @@ const aggregateAwardsData = (data: Premiacoes[]): AwardEntry[] => {
       };
     }
 
-    aggregated[autonomoId].totalDays += days;
+    aggregated[autonomoId].totalDays += 1;
 
     if (entry.pernoite) {
       aggregated[autonomoId].overnights += 1;
@@ -115,7 +113,7 @@ const filterAndAggregateData = (
 
 function Awards(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const contentRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null);
   const [rawData, setRawData] = useState<Premiacoes[]>([]);
   const [allSortedData, setAllSortedData] = useState<AwardEntry[]>([]);
   const [selectedDay, setSelectedDay] = useState("");
@@ -157,11 +155,7 @@ function Awards(): JSX.Element {
     order: "asc" | "desc"
   ): AwardEntry[] => {
     return [...dataToSort].sort((a, b) => {
-      if (
-        key === "totalDays" ||
-        key === "extraCount" ||
-        key === "overnights"
-      ) {
+      if (key === "totalDays" || key === "extraCount" || key === "overnights") {
         const aValue = a[key];
         const bValue = b[key];
         return order === "asc" ? aValue - bValue : bValue - aValue;
