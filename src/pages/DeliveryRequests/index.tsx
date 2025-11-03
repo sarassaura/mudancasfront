@@ -274,6 +274,7 @@ function DeliveryRequests(): JSX.Element {
   }, [rawData, selectedDay, selectedMonth, selectedYear]);
 
   const getCardColor = (dateString: string): string => {
+    if (!dateString) return COLOR_OPTIONS[0];
     return dayColorMap.get(dateString) || COLOR_OPTIONS[0];
   };
 
@@ -332,6 +333,15 @@ function DeliveryRequests(): JSX.Element {
         <h2 style={{ color: "#Ec3239" }}>Carregando pedidos...</h2>
       </div>
     );
+
+  if (!currentData || currentData.length === 0) {
+    return (
+      <div className="text-center p-5">
+        <h2 style={{ color: "#Ec3239" }}>Nenhum pedido encontrado</h2>
+        <p>Verifique os filtros aplicados.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-100 d-flex flex-column" ref={contentRef}>
@@ -449,37 +459,37 @@ function DeliveryRequests(): JSX.Element {
         <div className="d-flex flex-wrap justify-content-center gap-4 mb-5">
           {currentData.map((cardItem) => (
             <div
-              key={cardItem.card_key}
-              onClick={() => handleOpenModal(cardItem)}
+              key={cardItem?.card_key || "unknown"}
+              onClick={() => cardItem && handleOpenModal(cardItem)}
               style={{ cursor: "pointer" }}
             >
               <RequestCard
-                key={cardItem.card_key}
-                pedidoId={cardItem._id}
-                title={`[${[cardItem.tipos_evento.join("/")]}] ${
-                  cardItem.titulo || "Pedido Sem Título"
+                key={cardItem?.card_key || "unknown"}
+                pedidoId={cardItem?._id || ""}
+                title={`[${cardItem?.tipos_evento?.join("/") || "N/A"}] ${
+                  cardItem?.titulo || "Pedido Sem Título"
                 }`}
-                team={cardItem.equipe.nome}
+                team={cardItem?.equipe?.nome || "Equipe não definida"}
                 packingDate={
-                  cardItem.tipos_evento.includes("Embalagem")
+                  cardItem?.tipos_evento?.includes("Embalagem")
                     ? cardItem.data_foco
                     : "---"
                 }
                 takeoutDate={
-                  cardItem.tipos_evento.includes("Retirada")
+                  cardItem?.tipos_evento?.includes("Retirada")
                     ? cardItem.data_foco
                     : "---"
                 }
                 deliveryDate={
-                  cardItem.tipos_evento.includes("Entrega")
+                  cardItem?.tipos_evento?.includes("Entrega")
                     ? cardItem.data_foco
                     : "---"
                 }
-                vehicle={cardItem.veiculo.nome}
-                description={cardItem.descricao ?? ""}
-                onEdit={() => handleEditRequest(cardItem._id)}
-                onDelete={() => handleDeleteRequest(cardItem._id)}
-                cardColor={getCardColor(cardItem.data_foco)}
+                vehicle={cardItem?.veiculo?.nome || "Veículo não definido"}
+                description={cardItem?.descricao ?? ""}
+                onEdit={() => cardItem && handleEditRequest(cardItem._id)}
+                onDelete={() => cardItem && handleDeleteRequest(cardItem._id)}
+                cardColor={getCardColor(cardItem?.data_foco || "")}
               />
             </div>
           ))}
