@@ -10,7 +10,7 @@ import type { Veiculo, Funcionario, Autonomo } from "../../types";
 interface Pedidos {
   _id: string;
   titulo: string;
-  data_embalagem: string;
+  data_embalagem?: string;
   data_entrega: string;
   data_retirada: string;
   funcionario: Funcionario;

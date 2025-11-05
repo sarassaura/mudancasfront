@@ -1,5 +1,5 @@
-import { useState, type JSX, useEffect } from "react";
-import { Form, InputGroup } from "react-bootstrap";
+import { useState, type JSX, useEffect, useMemo } from "react";
+import { Badge, Form, InputGroup } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -12,6 +12,8 @@ import type {
   Autonomo,
 } from "../../types";
 import CustomButton from "../../components/CustomButton";
+
+type CollaboratorMap = { [id: string]: string };
 
 function Requests(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -28,8 +30,8 @@ function Requests(): JSX.Element {
     data_embalagem: "",
     data_retirada: "",
     data_entrega: "",
-    funcionario: "",
-    autonomo: "",
+    funcionario: [],
+    autonomo: [],
     veiculo: "",
     descricao: "",
   });
@@ -41,6 +43,15 @@ function Requests(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
 
+  const funcMap: CollaboratorMap = useMemo(() => 
+    funcionarios.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.nome }), {}), 
+    [funcionarios] 
+  ); 
+  const autoMap: CollaboratorMap = useMemo(() => 
+    autonomos.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.nome }), {}), 
+    [autonomos] 
+  );
+  
   useEffect(() => {
     const fetchPedidoData = async () => {
       if (isEditMode && editId) {
@@ -116,6 +127,30 @@ function Requests(): JSX.Element {
     }));
   };
 
+  const handleInputSelection = ( 
+    e: React.ChangeEvent<HTMLSelectElement>, 
+    field: "funcionario" | "autonomo" 
+  ) => { 
+    const selectedId = e.target.value; 
+    if (selectedId && !formData[field].includes(selectedId)) { 
+      setFormData((prev) => ({ 
+        ...prev, 
+        [field]: [...prev[field], selectedId], 
+      })); 
+    } 
+    e.target.value = ""; 
+  }; 
+    
+  const handleRemoveCollaborator = ( 
+    idToRemove: string, 
+    field: "funcionario" | "autonomo" 
+  ) => { 
+    setFormData((prev) => ({ 
+      ...prev, 
+      [field]: prev[field].filter((id) => id !== idToRemove), 
+    })); 
+  };
+
   const formatDateToString = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, "0");
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -156,7 +191,6 @@ function Requests(): JSX.Element {
 
     if (
       !formData.titulo ||
-      !formData.data_embalagem ||
       !formData.data_entrega ||
       !formData.data_retirada ||
       !formData.veiculo
@@ -231,6 +265,42 @@ function Requests(): JSX.Element {
       navigate("/cadastrar");
     }
   };
+
+  const CollaboratorChips = ({ 
+    ids, 
+    map, 
+    field 
+  }: { 
+    ids: string[], 
+    map: CollaboratorMap, 
+    field: "funcionario" | "autonomo" 
+  }) => ( 
+    <div className="d-flex flex-wrap gap-2 mt-2"> 
+      {ids.map((id) => ( 
+        <Badge 
+          key={id} 
+          className="d-flex align-items-center p-2 rounded-pill bg-white text-secondary border border-secondary" 
+          style={{ 
+            cursor: "pointer", 
+            backgroundColor: "white !important", 
+            fontFamily: 'Segoe UI, sans-serif', 
+            fontWeight: 'normal', 
+            fontSize: '14px', 
+          }} 
+          onClick={() => handleRemoveCollaborator(id, field)} 
+        > 
+          {map[id] || 'Nome Desconhecido'} 
+          <i 
+            className="bi bi-x-circle-fill ms-2" 
+            style={{ 
+              fontSize: '0.9em', 
+              color: "currentColor" 
+            }} 
+          ></i> 
+        </Badge> 
+      ))} 
+    </div> 
+  );
 
   if (fetching) {
     return (
@@ -328,22 +398,28 @@ function Requests(): JSX.Element {
             </InputGroup.Text>
             <Form.Select
               name="funcionario"
-              value={formData.funcionario}
-              onChange={handleInputChange}
+              value=""
+              onChange={(e) => handleInputSelection(e, "funcionario")}
               disabled={loading || fetching}
             >
               <option value="" disabled>
                 Selecione o(s) Funcionário(s)
               </option>
-              {funcionarios.map((funcionario) => (
+              {funcionarios
+                .filter(f => !formData.funcionario.includes(f._id))
+                .map((funcionario) => (
                 <option key={funcionario._id} value={funcionario._id}>
                   {funcionario.nome}
                 </option>
               ))}
             </Form.Select>
           </InputGroup>
+          <CollaboratorChips 
+            ids={formData.funcionario} 
+            map={funcMap} 
+            field="funcionario" 
+          />
         </Form.Group>
-
         <Form.Group className="mb-3" controlId="formGridAutonomos">
           <Form.Label>Autônomos</Form.Label>
           <InputGroup>
@@ -352,20 +428,27 @@ function Requests(): JSX.Element {
             </InputGroup.Text>
             <Form.Select
               name="autonomo"
-              value={formData.autonomo}
-              onChange={handleInputChange}
+              value=""
+              onChange={(e) => handleInputSelection(e, "autonomo")}
               disabled={loading || fetching}
             >
               <option value="" disabled>
                 Selecione o(s) Autônomo(s)
               </option>
-              {autonomos.map((autonomo) => (
+              {autonomos
+                .filter(a => !formData.autonomo.includes(a._id))
+                .map((autonomo) => (
                 <option key={autonomo._id} value={autonomo._id}>
                   {autonomo.nome}
                 </option>
               ))}
             </Form.Select>
           </InputGroup>
+          <CollaboratorChips 
+            ids={formData.autonomo} 
+            map={autoMap} 
+            field="autonomo" 
+          />
         </Form.Group>
         <Form.Group className="mb-3" controlId="formGridVehicle">
           <Form.Label>Veículo</Form.Label>
