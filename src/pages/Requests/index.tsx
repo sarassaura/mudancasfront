@@ -7,7 +7,6 @@ import { showError } from "../../components/ToastAlerts/ShowError";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type {
   DadosPedido,
-  Equipe,
   Veiculo,
   Funcionario,
   Autonomo,
@@ -29,14 +28,12 @@ function Requests(): JSX.Element {
     data_embalagem: "",
     data_retirada: "",
     data_entrega: "",
-    equipe: "",
     funcionario: "",
     autonomo: "",
     veiculo: "",
     descricao: "",
   });
 
-  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [autonomos, setAutonomos] = useState<Autonomo[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
@@ -62,7 +59,6 @@ function Requests(): JSX.Element {
             data_embalagem: pedidoData.data_embalagem || "",
             data_retirada: pedidoData.data_retirada || "",
             data_entrega: pedidoData.data_entrega || "",
-            equipe: pedidoData.equipe?._id || pedidoData.equipe || "",
             funcionario:
               pedidoData.funcionario?._id || pedidoData.funcionario || "",
             autonomo: pedidoData.autonomo?._id || pedidoData.autonomo || "",
@@ -85,23 +81,19 @@ function Requests(): JSX.Element {
     const fetchData = async () => {
       try {
         const [
-          equipesResponse,
           funcionariosResponse,
           autonomosResponse,
           veiculosResponse,
         ] = await Promise.all([
-          fetch(`${API_BASE_URL}/equipes`),
           fetch(`${API_BASE_URL}/funcionarios`),
           fetch(`${API_BASE_URL}/autonomos`),
           fetch(`${API_BASE_URL}/veiculos`),
         ]);
 
-        const equipesData = await equipesResponse.json();
         const funcionariosData = await funcionariosResponse.json();
         const autonomosData = await autonomosResponse.json();
         const veiculosData = await veiculosResponse.json();
 
-        setEquipes(equipesData);
         setFuncionarios(funcionariosData);
         setAutonomos(autonomosData);
         setVeiculos(veiculosData);
@@ -167,7 +159,6 @@ function Requests(): JSX.Element {
       !formData.data_embalagem ||
       !formData.data_entrega ||
       !formData.data_retirada ||
-      !formData.equipe ||
       !formData.veiculo
     ) {
       showError("Por favor, preencha todos os campos obrigatórios");
@@ -328,28 +319,6 @@ function Requests(): JSX.Element {
             </InputGroup>
           </Form.Group>
         </div>
-
-        <Form.Group className="mb-3" controlId="formGridTeam">
-          <Form.Label>Equipe</Form.Label>
-          <InputGroup>
-            <InputGroup.Text>
-              <i className="bi bi-people-fill"></i>
-            </InputGroup.Text>
-            <Form.Select
-              name="equipe"
-              value={formData.equipe}
-              onChange={handleInputChange}
-              disabled={loading || fetching}
-            >
-              <option value="">Selecione a Equipe</option>
-              {equipes.map((equipe) => (
-                <option key={equipe._id} value={equipe._id}>
-                  {equipe.nome}
-                </option>
-              ))}
-            </Form.Select>
-          </InputGroup>
-        </Form.Group>
 
         <Form.Group className="mb-3" controlId="formGridFuncionarios">
           <Form.Label>Funcionários</Form.Label>

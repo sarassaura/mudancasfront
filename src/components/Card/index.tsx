@@ -3,7 +3,6 @@ import { Button, Card } from "react-bootstrap";
 
 interface RequestCardProps {
   title: string;
-  team: string;
   packingDate: string;
   takeoutDate: string;
   deliveryDate: string;
@@ -17,7 +16,6 @@ interface RequestCardProps {
 
 function RequestCard({ 
   title, 
-  team, 
   packingDate, 
   takeoutDate,
   deliveryDate, 
@@ -64,10 +62,6 @@ function RequestCard({
             Entrega: <span>{deliveryDate}</span>
           </span>
         </div>
-
-        <p className="mb-3 text-secondary">
-          Equipe: <span>{team}</span>
-        </p>
 
         <p className="mb-3 text-secondary">
           Veículo: <span>{vehicle}</span>

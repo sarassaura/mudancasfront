@@ -9,7 +9,6 @@ export interface DadosPedido {
   data_embalagem: string;
   data_retirada: string;
   data_entrega: string;
-  equipe: string;
   funcionario: string;
   autonomo: string;
   veiculo: string;

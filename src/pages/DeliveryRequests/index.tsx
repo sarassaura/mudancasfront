@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import { showError } from "../../components/ToastAlerts/ShowError";
-import type { Equipe, Veiculo, Funcionario, Autonomo } from "../../types";
+import type { Veiculo, Funcionario, Autonomo } from "../../types";
 
 interface Pedidos {
   _id: string;
@@ -13,7 +13,6 @@ interface Pedidos {
   data_embalagem: string;
   data_entrega: string;
   data_retirada: string;
-  equipe: Equipe;
   funcionario: Funcionario;
   autonomo: Autonomo;
   veiculo: Veiculo;
@@ -24,7 +23,6 @@ interface Pedidos {
 interface ConsolidatedCardItem {
   _id: string;
   titulo: string;
-  equipe: Equipe;
   veiculo: Veiculo;
   descricao?: string;
   data_foco: string;
@@ -85,7 +83,6 @@ const expandPedidosToConsolidatedCardItems = (
         consolidatedMap.set(key, {
           _id: pedido._id,
           titulo: pedido.titulo,
-          equipe: pedido.equipe,
           veiculo: pedido.veiculo,
           descricao: pedido.descricao,
           data_foco: event.date,
@@ -469,7 +466,6 @@ function DeliveryRequests(): JSX.Element {
                 title={`[${cardItem?.tipos_evento?.join("/") || "N/A"}] ${
                   cardItem?.titulo || "Pedido Sem Título"
                 }`}
-                team={cardItem?.equipe?.nome || "Equipe não definida"}
                 packingDate={
                   cardItem?.tipos_evento?.includes("Embalagem")
                     ? cardItem.data_foco
@@ -519,9 +515,6 @@ function DeliveryRequests(): JSX.Element {
         <Modal.Body>
           {selectedPedido ? (
             <>
-              <p>
-                <strong>Equipe:</strong> {selectedPedido.equipe?.nome}
-              </p>
               <p>
                 <strong>Veículo:</strong> {selectedPedido.veiculo?.nome}
               </p>
