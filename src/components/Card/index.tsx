@@ -1,11 +1,21 @@
 import type { JSX } from "react";
 import { Button, Card } from "react-bootstrap";
 
+interface Funcionario {
+  nome: string;
+}
+
+interface Autonomo {
+  nome: string;
+}
+
 interface RequestCardProps {
   title: string;
-  packingDate?: string;
-  takeoutDate: string;
-  deliveryDate: string;
+  data_embalagem?: string;
+  data_retirada: string;
+  data_entrega: string;
+  funcionarios?: Funcionario[];
+  autonomos?: Autonomo[];
   vehicle: string;
   description: string;
   onEdit: (id: string) => void;
@@ -16,9 +26,11 @@ interface RequestCardProps {
 
 function RequestCard({ 
   title, 
-  packingDate, 
-  takeoutDate,
-  deliveryDate, 
+  data_embalagem, 
+  data_retirada,
+  data_entrega,
+  funcionarios = [],
+  autonomos = [], 
   vehicle, 
   description, 
   onEdit, 
@@ -37,7 +49,7 @@ function RequestCard({
     border: '1px solid #DEE2E6',
     borderRadius: '12px', 
     padding: '24px', 
-    width: '350px',
+    width: '400px',
     backgroundColor: cardColor,
     display: 'flex',              
     flexDirection: 'column' as const,
@@ -51,17 +63,27 @@ function RequestCard({
           {title}
         </Card.Title>
 
-        <div className="d-flex justify-content-center gap-4 mb-4 text-secondary">
-          <span>
-            Embalagem: <span>{packingDate}</span>
-          </span>
-          <span>
-            Retirada: <span>{takeoutDate}</span>
-          </span>
-          <span>
-            Entrega: <span>{deliveryDate}</span>
-          </span>
+        <div className="d-flex flex-column align-items-center mb-4 text-secondary">
+          <div className="d-flex justify-content-between gap-4">
+            <span>Embalagem: {data_embalagem}</span>
+            <span>Retirada: {data_retirada}</span>
+          </div>
+          <div >
+            <span>Entrega: {data_entrega}</span>
+          </div>
         </div>
+
+        {funcionarios.length > 0 && (
+          <p className="mb-3 text-secondary">
+            Funcionários: {funcionarios.map(f => f.nome).join(", ")}
+          </p>
+        )}
+
+        {autonomos.length > 0 && (
+          <p className="mb-3 text-secondary">
+            Autônomos: {autonomos.map(a => a.nome).join(", ")}
+          </p>
+        )}
 
         <p className="mb-3 text-secondary">
           Veículo: <span>{vehicle}</span>
@@ -83,7 +105,10 @@ function RequestCard({
         <Button 
           size="sm" 
           variant="outline-danger" 
-          onClick={() => onDelete(pedidoId)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(pedidoId);
+          }}
         >
           <i className="bi bi-x-circle me-1"></i>  Excluir
         </Button>

@@ -13,8 +13,8 @@ interface Pedidos {
   data_embalagem?: string;
   data_entrega: string;
   data_retirada: string;
-  funcionario: Funcionario;
-  autonomo: Autonomo;
+  funcionario: Funcionario[];
+  autonomo: Autonomo[];
   veiculo: Veiculo;
   descricao?: string;
   status?: string;
@@ -23,6 +23,8 @@ interface Pedidos {
 interface ConsolidatedCardItem {
   _id: string;
   titulo: string;
+  funcionarios: Funcionario[];
+  autonomos: Autonomo[];
   veiculo: Veiculo;
   descricao?: string;
   data_foco: string;
@@ -83,6 +85,8 @@ const expandPedidosToConsolidatedCardItems = (
         consolidatedMap.set(key, {
           _id: pedido._id,
           titulo: pedido.titulo,
+          funcionarios: Array.isArray(pedido.funcionario) ? pedido.funcionario : [pedido.funcionario],
+          autonomos: Array.isArray(pedido.autonomo) ? pedido.autonomo : [pedido.autonomo],
           veiculo: pedido.veiculo,
           descricao: pedido.descricao,
           data_foco: event.date,
@@ -466,21 +470,23 @@ function DeliveryRequests(): JSX.Element {
                 title={`[${cardItem?.tipos_evento?.join("/") || "N/A"}] ${
                   cardItem?.titulo || "Pedido Sem Título"
                 }`}
-                packingDate={
+                data_embalagem={
                   cardItem?.tipos_evento?.includes("Embalagem")
                     ? cardItem.data_foco
                     : "---"
                 }
-                takeoutDate={
+                data_retirada={
                   cardItem?.tipos_evento?.includes("Retirada")
                     ? cardItem.data_foco
                     : "---"
                 }
-                deliveryDate={
+                data_entrega={
                   cardItem?.tipos_evento?.includes("Entrega")
                     ? cardItem.data_foco
                     : "---"
                 }
+                funcionarios={cardItem?.funcionarios || []}
+                autonomos={cardItem?.autonomos || []}
                 vehicle={cardItem?.veiculo?.nome || "Veículo não definido"}
                 description={cardItem?.descricao ?? ""}
                 onEdit={() => cardItem && handleEditRequest(cardItem._id)}
@@ -515,19 +521,29 @@ function DeliveryRequests(): JSX.Element {
         <Modal.Body>
           {selectedPedido ? (
             <>
+              <div className="d-flex flex-column align-items-center mb-4">
+                <div className="d-flex justify-content-center gap-4">
+                  <p>
+                    <strong>Data de Embalagem:</strong>{" "}
+                    {selectedPedido.data_embalagem}
+                  </p>
+                  <p>
+                    <strong>Data de Retirada:</strong>{" "}
+                    {selectedPedido.data_retirada}
+                  </p>
+                  <p>
+                    <strong>Data de Entrega:</strong> {selectedPedido.data_entrega}
+                  </p>
+                </div>
+              </div>
+              <p>
+                <strong>Funcionários:</strong> {selectedPedido.funcionario?.map(f => f.nome).join(", ")}
+              </p>
+              <p>
+                <strong>Autônomos:</strong> {selectedPedido.autonomo?.map(f => f.nome).join(", ")}
+              </p>
               <p>
                 <strong>Veículo:</strong> {selectedPedido.veiculo?.nome}
-              </p>
-              <p>
-                <strong>Data de Embalagem:</strong>{" "}
-                {selectedPedido.data_embalagem}
-              </p>
-              <p>
-                <strong>Data de Retirada:</strong>{" "}
-                {selectedPedido.data_retirada}
-              </p>
-              <p>
-                <strong>Data de Entrega:</strong> {selectedPedido.data_entrega}
               </p>
               <p>
                 <strong>Descrição completa:</strong>
