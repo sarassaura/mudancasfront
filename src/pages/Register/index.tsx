@@ -13,11 +13,12 @@ function Register(): JSX.Element {
           <ButtonLink url="/funcionarios">Funcionários</ButtonLink>
           <ButtonLink url="/autonomos">Autônomos</ButtonLink>
           <ButtonLink url="/equipes">Equipes</ButtonLink>
+          <ButtonLink url="/veiculos">Veículos</ButtonLink>
         </div>
         <div className="col-6 d-flex flex-column gap-3 px-2">
           <ButtonLink url="/pedidos">Pedidos</ButtonLink>
-          <ButtonLink url="/horas">Diárias de Autônomos</ButtonLink>
-          <ButtonLink url="/veiculos">Veículos</ButtonLink>
+          <ButtonLink url="/horas-funcionarios">Diárias Funcionários</ButtonLink>
+          <ButtonLink url="/horas-autonomos">Diárias Autônomos</ButtonLink>
         </div>
       </div>
     </div>

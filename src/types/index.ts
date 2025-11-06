@@ -57,8 +57,17 @@ export interface Autonomo {
 }
 
 export interface DadosHorasAutonomo {
-  data: string;
   autonomo: string;
+  escada: boolean;
+  data_escada: string;
+  valor: string;
+}
+
+export interface DadosHorasFuncionario {
+  funcionario: string;
   pernoite: boolean;
-  extra: boolean;
+  data_pernoite: string;
+  escada: boolean;
+  data_escada: string;
+  valor: string;
 }
