@@ -12,6 +12,7 @@ import Employees from "./pages/Employees";
 import Freelancers from "./pages/Freelancers";
 import Teams from "./pages/Teams";
 import Requests from "./pages/Requests";
+import EmployeeHours from "./pages/EmployeeHours";
 import FreelancerHours from "./pages/FreelancerHours";
 import Vehicles from "./pages/Vehicles";
 import Login from './pages/Login';
@@ -41,7 +42,8 @@ function App() {
               <Route path="/autonomos" element={<Freelancers />} />
               <Route path="/equipes" element={<Teams />} />
               <Route path="/pedidos" element={<Requests />} />
-              <Route path="/horas" element={<FreelancerHours />} />
+              <Route path="/horas-funcionarios" element={<EmployeeHours />} />
+              <Route path="/horas-autonomos" element={<FreelancerHours />} />
               <Route path="/veiculos" element={<Vehicles />} />
             </Route>
           </Route>

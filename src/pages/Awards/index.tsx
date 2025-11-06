@@ -1,242 +1,78 @@
 import { useEffect, useRef, useState, type JSX } from "react";
-import { Form, InputGroup, Pagination, Table } from "react-bootstrap";
+import { Button, Form, InputGroup, Modal, Pagination, Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 
 interface Premiacoes {
   _id: string;
-  data: string;
-  autonomo: {
+  funcionario: {
     _id: string;
     nome: string;
   };
   pernoite: boolean;
-  extra: boolean;
-}
-
-interface AwardEntry {
-  id: string;
-  name: string;
-  totalDays: number;
-  overnights: number;
-  extraCount: number;
+  data_pernoite: string;
+  escada: boolean;
+  data_escada: string;
+  valor: string;
 }
 
 const RED_COLOR = "#Ec3239";
 
-const parseDateToLocal = (dateString: string): Date | null => {
-  let yyyy_mm_dd: string;
-
-  if (dateString.includes("/")) {
-    const parts = dateString.split("/");
-    const d = parts[0].padStart(2, "0");
-    const m = parts[1].padStart(2, "0");
-    const y = parts[2];
-    yyyy_mm_dd = `${y}-${m}-${d}`;
-  } else {
-    yyyy_mm_dd = dateString;
-  }
-  const date = new Date(`${yyyy_mm_dd}T12:00:00`);
-
-  return isNaN(date.getTime()) ? null : date;
-};
-
-const aggregateAwardsData = (data: Premiacoes[]): AwardEntry[] => {
-  const aggregated: { [autonomoId: string]: AwardEntry } = {};
-
-  data.forEach((entry) => {
-    const autonomoId = entry.autonomo._id;
-
-    if (!aggregated[autonomoId]) {
-      aggregated[autonomoId] = {
-        id: autonomoId,
-        name: entry.autonomo.nome,
-        totalDays: 0,
-        overnights: 0,
-        extraCount: 0,
-      };
-    }
-
-    aggregated[autonomoId].totalDays += 1;
-
-    if (entry.pernoite) {
-      aggregated[autonomoId].overnights += 1;
-    }
-
-    if (entry.extra) {
-      aggregated[autonomoId].extraCount += 1;
-    }
-  });
-
-  return Object.values(aggregated);
-};
-
-const filterAndAggregateData = (
-  data: Premiacoes[],
-  day: string,
-  month: string,
-  year: string
-): AwardEntry[] => {
-  let filteredData = data;
-
-  if (day || month || year) {
-    filteredData = data.filter((entry) => {
-      const entryDate = parseDateToLocal(entry.data);
-      if (!entryDate) return false;
-
-      const entryDay = entryDate.getDate().toString();
-      const entryMonth = (entryDate.getMonth() + 1).toString();
-      const entryYear = entryDate.getFullYear().toString();
-
-      const dayMatch = !day || entryDay === day;
-      const monthMatch = !month || entryMonth === month;
-      const yearMatch = !year || entryYear === year;
-
-      return dayMatch && monthMatch && yearMatch;
-    });
-  }
-
-  if (!day && !month && !year) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    filteredData = data.filter((entry) => {
-      const parts = entry.data.split("/");
-      const isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      const entryDate = new Date(isoDate);
-      return !isNaN(entryDate.getTime()) && entryDate >= thirtyDaysAgo;
-    });
-  }
-
-  return aggregateAwardsData(filteredData);
-};
-
 function Awards(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
-  const [rawData, setRawData] = useState<Premiacoes[]>([]);
-  const [allSortedData, setAllSortedData] = useState<AwardEntry[]>([]);
-  const [selectedDay, setSelectedDay] = useState("");
+  
+  const [data, setData] = useState<Premiacoes[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+  const [searchName, setSearchName] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [loading, setLoading] = useState(true);
-
-  const navigate = useNavigate();
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
-  const months = [
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
-  ];
-  const years = Array.from({ length: 11 }, (_, i) => 2015 + i);
-
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof AwardEntry;
-    order: "asc" | "desc";
-  }>({
-    key: "totalDays",
-    order: "desc",
-  });
-
-  const sortData = (
-    dataToSort: AwardEntry[],
-    key: keyof AwardEntry,
-    order: "asc" | "desc"
-  ): AwardEntry[] => {
-    return [...dataToSort].sort((a, b) => {
-      if (key === "totalDays" || key === "extraCount" || key === "overnights") {
-        const aValue = a[key];
-        const bValue = b[key];
-        return order === "asc" ? aValue - bValue : bValue - aValue;
-      }
-      if (key === "name") {
-        const aValue = String(a[key]).toLowerCase();
-        const bValue = String(b[key]).toLowerCase();
-        if (aValue < bValue) return order === "asc" ? -1 : 1;
-        if (aValue > bValue) return order === "asc" ? 1 : -1;
-        return 0;
-      }
-      return 0;
-    });
-  };
-
-  const handleSort = (column: keyof AwardEntry) => {
-    const isSameColumn = sortConfig.key === column;
-    const newOrder =
-      isSameColumn && sortConfig.order === "asc" ? "desc" : "asc";
-
-    const sorted = sortData(allSortedData, column, newOrder);
-
-    setAllSortedData(sorted);
-    setSortConfig({ key: column, order: newOrder });
-  };
+  
+  const [showModal, setShowModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
     fetch(`${API_BASE_URL}/data`)
       .then((response) => response.json())
       .then((data: Premiacoes[]) => {
-        setRawData(data);
-
-        const aggregated = filterAndAggregateData(
-          data,
-          selectedDay,
-          selectedMonth,
-          selectedYear
-        );
-
-        const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
-
-        setAllSortedData(sorted);
-        setCurrentPage(1);
+        setData(data);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Erro ao buscar premiações:", err);
         setLoading(false);
       });
-  }, [
-    selectedDay,
-    selectedMonth,
-    selectedYear,
-    API_BASE_URL,
-    sortConfig.key,
-    sortConfig.order,
-  ]);
+  }, [API_BASE_URL]);
 
-  useEffect(() => {
-    if (rawData.length > 0) {
-      const aggregated = filterAndAggregateData(
-        rawData,
-        selectedDay,
-        selectedMonth,
-        selectedYear
-      );
+  const formatDate = (isoDate?: string) => {
+    if (!isoDate) return "-";
+    const date = new Date(isoDate);
+    if (isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
+  };
+  
+  const filteredData = data.filter((item) => {
+    const nameMatch = item.funcionario?.nome
+      .toLowerCase()
+      .includes(searchName.toLowerCase());
 
-      const sorted = sortData(aggregated, sortConfig.key, sortConfig.order);
+    const monthMatch =
+      !selectedMonth ||
+      item.data_pernoite?.split("-")[1] === selectedMonth ||
+      item.data_escada?.split("-")[1] === selectedMonth;
 
-      setAllSortedData(sorted);
-      setCurrentPage(1);
-    }
-  }, [
-    selectedDay,
-    selectedMonth,
-    selectedYear,
-    rawData,
-    sortConfig.key,
-    sortConfig.order,
-  ]);
+    const yearMatch =
+      !selectedYear ||
+      item.data_pernoite?.split("-")[0] === selectedYear ||
+      item.data_escada?.split("-")[0] === selectedYear;
+
+    return nameMatch && monthMatch && yearMatch;
+  });
 
   const handleExportPDF = () => {
     const element = contentRef.current;
@@ -244,7 +80,7 @@ function Awards(): JSX.Element {
 
     const opt = {
       margin: 0,
-      filename: "premiacoes_filtradas.pdf",
+      filename: "premiacoes.pdf",
       image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -263,51 +99,30 @@ function Awards(): JSX.Element {
     html2pdf().set(opt).from(element).save();
   };
 
-  const paginateAwards = allSortedData;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = paginateAwards.slice(
+  const currentData = filteredData.slice(
     startIndex,
     startIndex + itemsPerPage
   );
-  const totalPages = Math.ceil(paginateAwards.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-  const renderPaginationItems = () => {
-    const items = [];
-    for (let number = 1; number <= totalPages; number++) {
-      items.push(
-        <Pagination.Item
-          key={number}
-          active={number === currentPage}
-          onClick={() => setCurrentPage(number)}
-        >
-          {number}
-        </Pagination.Item>
-      );
-    }
-    return items;
+  const handleDeleteClick = (id: string) => {
+    setDeleteId(id);
+    setShowModal(true);
   };
 
-  const renderSortIcon = (column: keyof AwardEntry) => {
-    const isActive = sortConfig.key === column;
-    const icon = sortConfig.order === "asc" ? "down" : "up";
-    const iconVisibility = isActive ? "visible" : "hidden";
-
-    return (
-      <i
-        className={`bi bi-arrow-${icon} ms-1`}
-        style={{
-          visibility: iconVisibility,
-          display: "inline-block",
-          width: "16px",
-        }}
-      ></i>
-    );
+  const confirmDelete = () => {
+    if (deleteId) {
+      setData((prev) => prev.filter((item) => item._id !== deleteId));
+    }
+    setShowModal(false);
+    setDeleteId(null);
   };
 
   if (loading)
     return (
       <div className="text-center p-5">
-        <h2 style={{ color: "#Ec3239" }}>Carregando premiações...</h2>
+        <h2 style={{ color: RED_COLOR }}>Carregando premiações...</h2>
       </div>
     );
 
@@ -350,30 +165,21 @@ function Awards(): JSX.Element {
       >
         <h1
           className="h1 fw-bold text-center mb-4"
-          style={{ color: "#Ec3239" }}
+          style={{ color: RED_COLOR }}
         >
           Premiações
         </h1>
         <div className="d-flex justify-content-end mb-4">
           <div className="d-flex flex-wrap justify-content-center justify-content-md-end gap-3 w-100 w-md-auto">
-            <InputGroup
-              className="flex-grow-1"
-              style={{ maxWidth: "120px", minWidth: "100px" }}
-            >
+            <InputGroup style={{ maxWidth: "200px" }}>
               <InputGroup.Text>
-                <i className="bi bi-calendar-day"></i>
+                <i className="bi bi-person"></i>
               </InputGroup.Text>
-              <Form.Select
-                value={selectedDay}
-                onChange={(e) => setSelectedDay(e.target.value)}
-              >
-                <option value="">Dia</option>
-                {days.map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </Form.Select>
+              <Form.Control
+                placeholder="Filtrar por nome"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+              />
             </InputGroup>
 
             <InputGroup
@@ -388,11 +194,17 @@ function Awards(): JSX.Element {
                 onChange={(e) => setSelectedMonth(e.target.value)}
               >
                 <option value="">Mês</option>
-                {months.map((month, index) => (
-                  <option key={month} value={index + 1}>
-                    {month}
-                  </option>
-                ))}
+                {Array.from({ length: 12 }, (_, i) => {
+                  const monthName = new Date(0, i)
+                    .toLocaleString("pt-BR", { month: "long" });
+                  const capitalized =
+                    monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                  return (
+                    <option key={i + 1} value={(i + 1).toString().padStart(2, "0")}>
+                      {capitalized}
+                    </option>
+                  );
+                })}
               </Form.Select>
             </InputGroup>
 
@@ -408,11 +220,15 @@ function Awards(): JSX.Element {
                 onChange={(e) => setSelectedYear(e.target.value)}
               >
                 <option value="">Ano</option>
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
+                {[...new Set(data.map(item => 
+                  (item.data_pernoite || item.data_escada || "")
+                    .split("-")[0]
+                ))]
+                  .filter(Boolean)
+                  .sort()
+                  .map((year) => (
+                    <option key={year}>{year}</option>
+                  ))}
               </Form.Select>
             </InputGroup>
           </div>
@@ -422,46 +238,51 @@ function Awards(): JSX.Element {
           <thead>
             <tr>
               <th>#</th>
-              <th
-                style={{ cursor: "pointer" }}
-                onClick={() => handleSort("name")}
-              >
-                Nome
-                {renderSortIcon("name")}
-              </th>
-              <th
-                style={{ cursor: "pointer" }}
-                onClick={() => handleSort("totalDays")}
-              >
-                Diárias
-                {renderSortIcon("totalDays")}
-              </th>
-              <th
-                style={{ cursor: "pointer" }}
-                onClick={() => handleSort("overnights")}
-              >
-                Pernoites
-                {renderSortIcon("overnights")}
-              </th>
-              <th
-                style={{ cursor: "pointer" }}
-                onClick={() => handleSort("extraCount")}
-              >
-                Extras
-                {renderSortIcon("extraCount")}
-              </th>
+              <th>Funcionário</th>
+              <th className="text-center">Pernoite</th>
+              <th className="text-center">Data Pernoite</th>
+              <th className="text-center">Escada</th>
+              <th className="text-center">Data Escada</th>
+              <th className="text-center">Valor</th>
+              <th className="text-center">Editar</th>
+              <th className="text-center">Excluir</th>
             </tr>
           </thead>
           <tbody>
-            {currentData.map((entry, index) => (
-              <tr key={entry.id}>
-                <td className="fw-bold">{startIndex + index + 1}</td>
-                <td>{entry.name}</td>
-                <td>{entry.totalDays}</td>
-                <td>{entry.overnights}</td>
-                <td>{entry.extraCount}</td>
+            {currentData.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="text-center text-muted">
+                  Nenhum registro encontrado.
+                </td>
               </tr>
-            ))}
+            ) : (
+            currentData.map((item, index) => (
+              <tr key={item._id}>
+                <td className="fw-bold">{startIndex + index + 1}</td>
+                <td>{item.funcionario?.nome}</td>
+                <td className="text-center">{item.pernoite ? "Sim" : "Não"}</td>
+                <td className="text-center">{formatDate(item.data_pernoite)}</td>
+                <td className="text-center">{item.escada ? "Sim" : "Não"}</td>
+                <td className="text-center">{formatDate(item.data_escada)}</td>
+                <td className="text-center">{item.valor}</td>
+                <td className="text-center">
+                  <i
+                    className="bi bi-pencil-square text-primary"
+                    style={{ cursor: "pointer" }}
+                    title="Editar"
+                  ></i>
+                </td>
+                <td className="text-center">
+                  <i
+                    className="bi bi-trash3 text-danger"
+                    style={{ cursor: "pointer" }}
+                    title="Excluir"
+                    onClick={() => handleDeleteClick(item._id)}
+                  ></i>
+                </td>
+              </tr>
+            ))
+          )}
           </tbody>
         </Table>
 
@@ -472,7 +293,15 @@ function Awards(): JSX.Element {
               onClick={() => setCurrentPage((p) => p - 1)}
               style={{ color: RED_COLOR }}
             />
-            {renderPaginationItems()}
+            {Array.from({ length: totalPages }, (_, i) => (
+              <Pagination.Item
+                key={i + 1}
+                active={i + 1 === currentPage}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </Pagination.Item>
+            ))}
             <Pagination.Next
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
@@ -481,6 +310,21 @@ function Awards(): JSX.Element {
           </Pagination>
         </div>
       </div>
+
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar exclusão</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Tem certeza que deseja excluir este registro?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Excluir
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
