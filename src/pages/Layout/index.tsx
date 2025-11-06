@@ -119,6 +119,14 @@ function Layout(): JSX.Element {
               >
                 Premiações
               </Nav.Link>
+              <Nav.Link 
+                className="text-dark" 
+                as={Link} 
+                to="/valor-a-pagar" 
+                onClick={closeNav}
+              >
+                Valor a pagar
+              </Nav.Link>
             </Nav>
           </Navbar.Collapse>
 

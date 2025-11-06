@@ -58,8 +58,9 @@ export interface Autonomo {
 }
 
 export interface DadosHorasAutonomo {
-  data: string;
   autonomo: string;
-  pernoite: boolean;
-  extra: boolean;
+  data: string;
+  escada: boolean;
+  data_escada: string;
+  valor: string;
 }
