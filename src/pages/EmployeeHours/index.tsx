@@ -99,8 +99,20 @@ const DayRow = ({
           <Form.Control
             type="text"
             value={entry.price}
-            onChange={(e) => updateEntry(entry.id, "price", e.target.value)}
-            style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, "");
+              const floatValue = parseFloat(raw) / 100;
+              const formatted =
+                raw.length === 0
+                  ? ""
+                  : floatValue.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    });
+              updateEntry(entry.id, "price", formatted);
+            }}
+            style={{ marginTop: "0.4rem" }}
+            placeholder="R$ 0,00"
           />
         </Form.Group>
       </div>

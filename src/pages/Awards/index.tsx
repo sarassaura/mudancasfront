@@ -187,7 +187,7 @@ function Awards(): JSX.Element {
               style={{ maxWidth: "130px", minWidth: "120px" }}
             >
               <InputGroup.Text>
-                <i className="bi bi-calendar-month"></i>
+                <i className="bi bi-calendar-week"></i>
               </InputGroup.Text>
               <Form.Select
                 value={selectedMonth}
@@ -213,7 +213,7 @@ function Awards(): JSX.Element {
               style={{ maxWidth: "130px", minWidth: "120px" }}
             >
               <InputGroup.Text>
-                <i className="bi bi-calendar-date"></i>
+                <i className="bi bi-calendar-week"></i>
               </InputGroup.Text>
               <Form.Select
                 value={selectedYear}
