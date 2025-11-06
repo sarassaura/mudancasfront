@@ -6,12 +6,11 @@ export interface DadosAdmin {
 
 export interface DadosPedido {
   titulo: string;
-  data_embalagem: string;
+  data_embalagem?: string;
   data_retirada: string;
   data_entrega: string;
-  equipe: string;
-  funcionario: string;
-  autonomo: string;
+  funcionario: string[];
+  autonomo: string[];
   veiculo: string;
   descricao?: string;
 }

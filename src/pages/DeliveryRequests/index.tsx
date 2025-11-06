@@ -5,17 +5,16 @@ import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import { showError } from "../../components/ToastAlerts/ShowError";
-import type { Equipe, Veiculo, Funcionario, Autonomo } from "../../types";
+import type { Veiculo, Funcionario, Autonomo } from "../../types";
 
 interface Pedidos {
   _id: string;
   titulo: string;
-  data_embalagem: string;
+  data_embalagem?: string;
   data_entrega: string;
   data_retirada: string;
-  equipe: Equipe;
-  funcionario: Funcionario;
-  autonomo: Autonomo;
+  funcionario: Funcionario[];
+  autonomo: Autonomo[];
   veiculo: Veiculo;
   descricao?: string;
   status?: string;
@@ -24,7 +23,8 @@ interface Pedidos {
 interface ConsolidatedCardItem {
   _id: string;
   titulo: string;
-  equipe: Equipe;
+  funcionarios: Funcionario[];
+  autonomos: Autonomo[];
   veiculo: Veiculo;
   descricao?: string;
   data_foco: string;
@@ -85,7 +85,8 @@ const expandPedidosToConsolidatedCardItems = (
         consolidatedMap.set(key, {
           _id: pedido._id,
           titulo: pedido.titulo,
-          equipe: pedido.equipe,
+          funcionarios: Array.isArray(pedido.funcionario) ? pedido.funcionario : [pedido.funcionario],
+          autonomos: Array.isArray(pedido.autonomo) ? pedido.autonomo : [pedido.autonomo],
           veiculo: pedido.veiculo,
           descricao: pedido.descricao,
           data_foco: event.date,
@@ -469,22 +470,23 @@ function DeliveryRequests(): JSX.Element {
                 title={`[${cardItem?.tipos_evento?.join("/") || "N/A"}] ${
                   cardItem?.titulo || "Pedido Sem Título"
                 }`}
-                team={cardItem?.equipe?.nome || "Equipe não definida"}
-                packingDate={
+                data_embalagem={
                   cardItem?.tipos_evento?.includes("Embalagem")
                     ? cardItem.data_foco
                     : "---"
                 }
-                takeoutDate={
+                data_retirada={
                   cardItem?.tipos_evento?.includes("Retirada")
                     ? cardItem.data_foco
                     : "---"
                 }
-                deliveryDate={
+                data_entrega={
                   cardItem?.tipos_evento?.includes("Entrega")
                     ? cardItem.data_foco
                     : "---"
                 }
+                funcionarios={cardItem?.funcionarios || []}
+                autonomos={cardItem?.autonomos || []}
                 vehicle={cardItem?.veiculo?.nome || "Veículo não definido"}
                 description={cardItem?.descricao ?? ""}
                 onEdit={() => cardItem && handleEditRequest(cardItem._id)}
@@ -519,22 +521,29 @@ function DeliveryRequests(): JSX.Element {
         <Modal.Body>
           {selectedPedido ? (
             <>
+              <div className="d-flex flex-column align-items-center mb-4">
+                <div className="d-flex justify-content-center gap-4">
+                  <p>
+                    <strong>Data de Embalagem:</strong>{" "}
+                    {selectedPedido.data_embalagem}
+                  </p>
+                  <p>
+                    <strong>Data de Retirada:</strong>{" "}
+                    {selectedPedido.data_retirada}
+                  </p>
+                  <p>
+                    <strong>Data de Entrega:</strong> {selectedPedido.data_entrega}
+                  </p>
+                </div>
+              </div>
               <p>
-                <strong>Equipe:</strong> {selectedPedido.equipe?.nome}
+                <strong>Funcionários:</strong> {selectedPedido.funcionario?.map(f => f.nome).join(", ")}
+              </p>
+              <p>
+                <strong>Autônomos:</strong> {selectedPedido.autonomo?.map(f => f.nome).join(", ")}
               </p>
               <p>
                 <strong>Veículo:</strong> {selectedPedido.veiculo?.nome}
-              </p>
-              <p>
-                <strong>Data de Embalagem:</strong>{" "}
-                {selectedPedido.data_embalagem}
-              </p>
-              <p>
-                <strong>Data de Retirada:</strong>{" "}
-                {selectedPedido.data_retirada}
-              </p>
-              <p>
-                <strong>Data de Entrega:</strong> {selectedPedido.data_entrega}
               </p>
               <p>
                 <strong>Descrição completa:</strong>
