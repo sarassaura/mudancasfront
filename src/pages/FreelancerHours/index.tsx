@@ -11,8 +11,9 @@ import CustomButton from "../../components/CustomButton";
 interface HourEntry {
   id: number;
   date: Date | null;
-  overnight: boolean;
-  extra: boolean;
+  stairs: boolean;
+  date_stairs: Date | null;
+  price: string;
 }
 
 const DayRow = ({
@@ -23,56 +24,86 @@ const DayRow = ({
   updateEntry: (
     id: number,
     field: keyof HourEntry,
-    value: Date | null | number | boolean
+    value: Date | null | number | boolean | string
   ) => void;
 }) => (
   <>
     <div
       className="row mb-3 g-3 align-items-end justify-content-between text-center"
-      key={entry.id}
     >
-      <Form.Group controlId={`date-${entry.id}`} className="col-12 col-md-5">
-        <Form.Label>Data</Form.Label>
-        <InputGroup className="d-flex justify-content-center justify-content-md-start">
-          <InputGroup.Text>
-            <i className="bi bi-calendar-week"></i>
-          </InputGroup.Text>
-          <div className="col-md-8">
-            <DatePicker
-              selected={entry.date}
-              onChange={(date) => updateEntry(entry.id, "date", date)}
-              dateFormat="dd/MM/yyyy"
-              className="form-control rounded-start-0 w-100"
-              placeholderText="dd/mm/aaaa"
-            />
-          </div>
-        </InputGroup>
-      </Form.Group>
+      <div className="col-12 d-flex align-items-center mb-3">
+        <Form.Group className="col-12 col-md-5 mx-auto text-center">
+          <Form.Label>Data</Form.Label>
+          <InputGroup className="d-flex justify-content-center justify-content-md-start">
+            <InputGroup.Text>
+              <i className="bi bi-calendar-week"></i>
+            </InputGroup.Text>
+            <div className="col-md-8">
+              <DatePicker
+                selected={entry.date}
+                onChange={(date) => updateEntry(entry.id, "date", date)}
+                dateFormat="dd/MM/yyyy"
+                className="form-control rounded-start-0 w-100"
+                placeholderText="dd/mm/aaaa"
+              />
+            </div>
+          </InputGroup>
+        </Form.Group>
+      </div>
 
-      <Form.Group
-        controlId={`overnight-${entry.id}`}
-        className="col-12 col-md-3 d-flex flex-column align-items-center"
-      >
-        <Form.Label>Pernoite?</Form.Label>
-        <Form.Check
-          type="checkbox"
-          checked={entry.overnight}
-          onChange={(e) => updateEntry(entry.id, "overnight", e.target.checked)}
-          style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
-        />
-      </Form.Group>
-      <Form.Group
-        controlId={`extra-${entry.id}`}
-        className="col-12 col-md-3 d-flex flex-column align-items-center"
-      >
-        <Form.Label>Extra?</Form.Label>
-        <Form.Check
-          type="checkbox"
-          checked={entry.extra}
-          onChange={(e) => updateEntry(entry.id, "extra", e.target.checked)}
-          style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
-        />
-      </Form.Group>
+      <div className="col-12 d-flex flex-wrap justify-content-center justify-content-md-start align-items-end gap-3">
+        <Form.Group
+          className="col-12 col-md-3 d-flex flex-column align-items-center"
+        >
+          <Form.Label>Escada?</Form.Label>
+          <Form.Check
+            type="checkbox"
+            checked={entry.stairs}
+            onChange={(e) => updateEntry(entry.id, "stairs", e.target.checked)}
+            style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
+          />
+        </Form.Group>
+        <Form.Group className="col-12 col-md-5">
+          <Form.Label>Data Escada</Form.Label>
+          <InputGroup className="d-flex justify-content-center justify-content-md-start">
+            <InputGroup.Text>
+              <i className="bi bi-calendar-week"></i>
+            </InputGroup.Text>
+            <div className="col-md-8">
+              <DatePicker
+                selected={entry.date_stairs}
+                onChange={(date) => updateEntry(entry.id, "date_stairs", date)}
+                dateFormat="dd/MM/yyyy"
+                className="form-control rounded-start-0 w-100"
+                placeholderText="dd/mm/aaaa"
+              />
+            </div>
+          </InputGroup>
+        </Form.Group>
+        <Form.Group
+          className="col-12 col-md-3 d-flex flex-column align-items-center"
+        >
+          <Form.Label>Valor a Pagar</Form.Label>
+          <Form.Control
+            type="text"
+            value={entry.price}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, ""); // só números
+              const floatValue = parseFloat(raw) / 100;
+              const formatted =
+                raw.length === 0
+                  ? ""
+                  : floatValue.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    });
+              updateEntry(entry.id, "price", formatted);
+            }}
+            style={{ marginTop: "0.4rem" }}
+            placeholder="R$ 0,00"
+          />
+        </Form.Group>
+      </div>
     </div>
   </>
 );
@@ -81,7 +112,7 @@ function FreelancerHours(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
-    { id: 1, date: null, overnight: false, extra: false },
+    { id: 1, date: null, stairs: false, date_stairs: null, price: "" },
   ]);
 
   const [autonomos, setAutonomos] = useState<Autonomo[]>([]);
@@ -106,14 +137,14 @@ function FreelancerHours(): JSX.Element {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;
     setDays([
       ...days,
-      { id: newId, date: null, overnight: false, extra: false },
+      { id: newId, date: null, stairs: false, date_stairs: null, price: "" },
     ]);
   };
 
   const updateDayEntry = (
     id: number,
     field: keyof HourEntry,
-    value: Date | null | number | boolean
+    value: Date | null | number | boolean | string
   ) => {
     setDays(
       days.map((day) => (day.id === id ? { ...day, [field]: value } : day))
@@ -137,42 +168,43 @@ function FreelancerHours(): JSX.Element {
       return;
     }
 
-    if (days.some((day) => !day.date)) {
-      showError("Por favor, preencha todas as datas");
+    if (days.some((day) => (day.stairs && !day.date_stairs))) {
+      showError("Por favor, preencha a data");
       setLoading(false);
       return;
     }
 
     try {
       for (const day of days) {
-        if (day.date) {
-          const dadosParaEnviar: DadosHorasAutonomo = {
-            data: formatDateToString(day.date),
-            autonomo: selectedAutonomo,
-            pernoite: day.overnight,
-            extra: day.extra,
-          };
+        if (!day.date && !day.date_stairs && !day.price) continue;
 
-          console.log("Enviando:", dadosParaEnviar);
+        const dadosParaEnviar: DadosHorasAutonomo = {
+          autonomo: selectedAutonomo,
+          data: day.date ? formatDateToString(day.date) : "",
+          escada: day.stairs,
+          data_escada: day.date_stairs ? formatDateToString(day.date_stairs) : "",
+          valor: day.price,
+        };
 
-          const response = await fetch(`${API_BASE_URL}/data`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(dadosParaEnviar),
-          });
+        console.log("Enviando:", dadosParaEnviar);
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Erro ao cadastrar horas");
-          }
+        const response = await fetch(`${API_BASE_URL}/data`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dadosParaEnviar),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Erro ao cadastrar horas");
         }
       }
 
       showSuccess("Dias cadastrados com sucesso!");
       setSelectedAutonomo("");
-      setDays([{ id: 1, date: null, overnight: false, extra: false }]);
+      setDays([{ id: 1, date: null, stairs: false, date_stairs: null, price: "" }]);
     } catch (error) {
       showError("Erro ao cadastrar os dias");
       console.error("Erro:", error);

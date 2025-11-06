@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Layout from "./pages/Layout";
 import Register from "./pages/Register";
 import Awards from "./pages/Awards";
+import FreelancerPayment from "./pages/FreelancerPayment";
 import DeliveryRequests from "./pages/DeliveryRequests";
 import Admins from "./pages/Admins";
 import Employees from "./pages/Employees";
@@ -33,6 +34,7 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="/premiacoes" element={<Awards />} />
+            <Route path="/valor-a-pagar" element={<FreelancerPayment />} />
             <Route path="/pedidos-mudanca" element={<DeliveryRequests />} />
             <Route path="/" element={<UnauthorizedEmployee />}>
               <Route path="/gerenciar" element={<Manage />} />

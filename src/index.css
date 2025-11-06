@@ -8,3 +8,18 @@
     right: 0;
     left: unset;
 }
+
+/* Remove o ícone de calendário do Chrome, Edge e Safari */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+
+/* Remove ícone no Firefox */
+input[type="date"]::-moz-focus-inner {
+  border: 0;
+}
+
+input[type="date"]::-moz-calendar-picker-indicator {
+  display: none;
+}

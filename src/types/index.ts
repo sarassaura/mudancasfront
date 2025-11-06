@@ -58,6 +58,7 @@ export interface Autonomo {
 
 export interface DadosHorasAutonomo {
   autonomo: string;
+  data: string;
   escada: boolean;
   data_escada: string;
   valor: string;

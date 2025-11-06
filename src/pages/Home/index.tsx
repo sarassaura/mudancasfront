@@ -15,6 +15,7 @@ function Home(): JSX.Element {
         )}
         <ButtonLink url="/pedidos-mudanca">Pedidos de Mudança</ButtonLink>
         <ButtonLink url="/premiacoes">Premiações</ButtonLink>
+        <ButtonLink url="/valor-a-pagar">Valor a Pagar</ButtonLink>
       </div>
     </div>
   )
