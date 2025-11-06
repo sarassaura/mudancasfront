@@ -6,12 +6,11 @@ export interface DadosAdmin {
 
 export interface DadosPedido {
   titulo: string;
-  data_embalagem: string;
+  data_embalagem?: string;
   data_retirada: string;
   data_entrega: string;
-  equipe: string;
-  funcionario: string;
-  autonomo: string;
+  funcionario: string[];
+  autonomo: string[];
   veiculo: string;
   descricao?: string;
 }
@@ -60,6 +59,15 @@ export interface Autonomo {
 export interface DadosHorasAutonomo {
   autonomo: string;
   data: string;
+  escada: boolean;
+  data_escada: string;
+  valor: string;
+}
+
+export interface DadosHorasFuncionario {
+  funcionario: string;
+  pernoite: boolean;
+  data_pernoite: string;
   escada: boolean;
   data_escada: string;
   valor: string;
