@@ -216,7 +216,7 @@ function FreelancerPayment(): JSX.Element {
                   alignItems: "center",
                   height: "19px",
                   width: "auto",
-                  padding: "6px",
+                  padding: "6px 6px 9px 6px",
                   fontSize: "12px",
                 }}
                 onClick={() => {
