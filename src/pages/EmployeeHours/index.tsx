@@ -10,11 +10,11 @@ import CustomButton from "../../components/CustomButton";
 
 interface HourEntry {
   id: number;
-  overnight: boolean;
-  date_overnight: Date | null;
-  stairs: boolean;
-  date_stairs: Date | null;
-  price: string;
+  overnight?: boolean;
+  date_overnight?: Date | null;
+  stairs?: boolean;
+  date_stairs?: Date | null;
+  price?: string;
 }
 
 const DayRow = ({
@@ -29,23 +29,21 @@ const DayRow = ({
   ) => void;
 }) => (
   <>
-    <div
-      className="row mb-3 g-3 align-items-end justify-content-between text-center"
-    >
+    <div className="row mb-3 g-3 align-items-end justify-content-between text-center">
       <div className="col-12 d-flex flex-wrap justify-content-center justify-content-md-start align-items-end gap-3 mb-3">
-        <Form.Group
-          className="col-12 col-md-3 d-flex flex-column align-items-center"
-        >
+        <Form.Group className="col-12 col-md-3 d-flex flex-column align-items-center">
           <Form.Label>Pernoite?</Form.Label>
           <Form.Check
             type="checkbox"
             checked={entry.overnight}
-            onChange={(e) => updateEntry(entry.id, "overnight", e.target.checked)}
+            onChange={(e) =>
+              updateEntry(entry.id, "overnight", e.target.checked)
+            }
             style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
           />
         </Form.Group>
         <Form.Group className="col-12 col-md-5">
-          <Form.Label>Data Pernoite</Form.Label>
+          <Form.Label>Data da Pernoite</Form.Label>
           <InputGroup className="d-flex justify-content-center justify-content-md-start">
             <InputGroup.Text>
               <i className="bi bi-calendar-week"></i>
@@ -53,7 +51,9 @@ const DayRow = ({
             <div className="col-md-8">
               <DatePicker
                 selected={entry.date_overnight}
-                onChange={(date) => updateEntry(entry.id, "date_overnight", date)}
+                onChange={(date) =>
+                  updateEntry(entry.id, "date_overnight", date)
+                }
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0 w-100"
                 placeholderText="dd/mm/aaaa"
@@ -64,9 +64,7 @@ const DayRow = ({
       </div>
 
       <div className="col-12 d-flex flex-wrap justify-content-center justify-content-md-start align-items-end gap-3">
-        <Form.Group
-          className="col-12 col-md-3 d-flex flex-column align-items-center"
-        >
+        <Form.Group className="col-12 col-md-3 d-flex flex-column align-items-center">
           <Form.Label>Escada?</Form.Label>
           <Form.Check
             type="checkbox"
@@ -92,9 +90,7 @@ const DayRow = ({
             </div>
           </InputGroup>
         </Form.Group>
-        <Form.Group
-          className="col-12 col-md-3 d-flex flex-column align-items-center"
-        >
+        <Form.Group className="col-12 col-md-3 d-flex flex-column align-items-center">
           <Form.Label>Valor a Pagar</Form.Label>
           <Form.Control
             type="text"
@@ -124,7 +120,14 @@ function EmployeeHours(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
-    { id: 1, overnight: false, date_overnight: null, stairs: false, date_stairs: null, price: "" },
+    {
+      id: 1,
+      overnight: false,
+      date_overnight: null,
+      stairs: false,
+      date_stairs: null,
+      price: "",
+    },
   ]);
 
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
@@ -149,7 +152,14 @@ function EmployeeHours(): JSX.Element {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;
     setDays([
       ...days,
-      { id: newId, overnight: false, date_overnight: null, stairs: false, date_stairs: null, price: "" },
+      {
+        id: newId,
+        overnight: false,
+        date_overnight: null,
+        stairs: false,
+        date_stairs: null,
+        price: "",
+      },
     ]);
   };
 
@@ -164,10 +174,10 @@ function EmployeeHours(): JSX.Element {
   };
 
   const formatDateToString = (date: Date): string => {
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    const dia = String(date.getDate()).padStart(2, "0");
+    const mes = String(date.getMonth() + 1).padStart(2, "0");
+    const ano = date.getFullYear();
+    return `${dia}/${mes}/${ano}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,7 +190,13 @@ function EmployeeHours(): JSX.Element {
       return;
     }
 
-    if (days.some((day) => (day.overnight && !day.date_overnight) || (day.stairs && !day.date_stairs))) {
+    if (
+      days.some(
+        (day) =>
+          (day.overnight && !day.date_overnight) ||
+          (day.stairs && !day.date_stairs)
+      )
+    ) {
       showError("Se marcar Pernoite ou Escada, preencha a data correspondente");
       setLoading(false);
       return;
@@ -188,19 +204,23 @@ function EmployeeHours(): JSX.Element {
 
     try {
       for (const day of days) {
-        if (day.date_overnight) {
+        if (day.overnight || day.stairs || day.price) {
           const dadosParaEnviar: DadosHorasFuncionario = {
             funcionario: selectedFuncionario,
             pernoite: day.overnight,
-            data_pernoite: formatDateToString(day.date_overnight),
+            data_pernoite: day.date_overnight
+              ? formatDateToString(day.date_overnight)
+              : "",
             escada: day.stairs,
-            data_escada: day.date_stairs ? formatDateToString(day.date_stairs) : "",
-            valor: day.price,
+            data_escada: day.date_stairs
+              ? formatDateToString(day.date_stairs)
+              : "",
+            pagar: day.price || "",
           };
 
           console.log("Enviando:", dadosParaEnviar);
 
-          const response = await fetch(`${API_BASE_URL}/data`, {
+          const response = await fetch(`${API_BASE_URL}/dados-funcionario`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -217,7 +237,16 @@ function EmployeeHours(): JSX.Element {
 
       showSuccess("Dias cadastrados com sucesso!");
       setSelectedFuncionario("");
-      setDays([{ id: 1, overnight: false, date_overnight: null, stairs: false, date_stairs: null, price: "" }]);
+      setDays([
+        {
+          id: 1,
+          overnight: false,
+          date_overnight: null,
+          stairs: false,
+          date_stairs: null,
+          price: "",
+        },
+      ]);
     } catch (error) {
       showError("Erro ao cadastrar os dias");
       console.error("Erro:", error);
@@ -232,7 +261,7 @@ function EmployeeHours(): JSX.Element {
         className="h1 fw-bold text-center w-100 mt-3"
         style={{ color: "#Ec3239" }}
       >
-        Cadastro de Diárias de Funcionários
+        Cadastro de Pernoites de Funcionários
       </h1>
       <Form
         className="mx-auto w-100"

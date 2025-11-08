@@ -95,7 +95,11 @@ function Vehicles(): JSX.Element {
             : "Veículo cadastrado com sucesso!"
         );
 
-        navigate("/gerenciar");
+        if (isEditMode) {
+          navigate("/gerenciar");
+        } else {
+          navigate("/cadastrar");
+        }
       } else {
         const errorData = await response.json();
         showError(
