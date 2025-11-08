@@ -10,10 +10,11 @@ import CustomButton from "../../components/CustomButton";
 
 interface HourEntry {
   id: number;
-  date: Date | null;
-  stairs: boolean;
-  date_stairs: Date | null;
-  price: string;
+  daily?: boolean;
+  daily_date?: Date | null;
+  stairs?: boolean;
+  date_stairs?: Date | null;
+  price?: string;
 }
 
 const DayRow = ({
@@ -28,20 +29,27 @@ const DayRow = ({
   ) => void;
 }) => (
   <>
-    <div
-      className="row mb-3 g-3 align-items-end justify-content-between text-center"
-    >
-      <div className="col-12 d-flex align-items-center mb-3">
-        <Form.Group className="col-12 col-md-5 mx-auto text-center">
-          <Form.Label>Data</Form.Label>
+    <div className="row mb-3 g-3 align-items-end justify-content-between text-center">
+      <div className="col-12 d-flex flex-wrap justify-content-center justify-content-md-start align-items-end gap-3 mb-3">
+        <Form.Group className="col-12 col-md-3 d-flex flex-column align-items-center">
+          <Form.Label>Diária?</Form.Label>
+          <Form.Check
+            type="checkbox"
+            checked={entry.daily}
+            onChange={(e) => updateEntry(entry.id, "daily", e.target.checked)}
+            style={{ marginTop: "0.4rem", transform: "scale(1.2)" }}
+          />
+        </Form.Group>
+        <Form.Group className="col-12 col-md-5">
+          <Form.Label>Data da Diária</Form.Label>
           <InputGroup className="d-flex justify-content-center justify-content-md-start">
             <InputGroup.Text>
               <i className="bi bi-calendar-week"></i>
             </InputGroup.Text>
             <div className="col-md-8">
               <DatePicker
-                selected={entry.date}
-                onChange={(date) => updateEntry(entry.id, "date", date)}
+                selected={entry.daily_date}
+                onChange={(date) => updateEntry(entry.id, "daily_date", date)}
                 dateFormat="dd/MM/yyyy"
                 className="form-control rounded-start-0 w-100"
                 placeholderText="dd/mm/aaaa"
@@ -51,10 +59,8 @@ const DayRow = ({
         </Form.Group>
       </div>
 
-      <div className="col-12 d-flex flex-wrap justify-content-center justify-content-md-start align-items-end gap-3">
-        <Form.Group
-          className="col-12 col-md-3 d-flex flex-column align-items-center"
-        >
+      <div className="col-12 d-flex flex-wrap justify-content-center justify-content-md-start align-items-end gap-3 mb-3">
+        <Form.Group className="col-12 col-md-3 d-flex flex-column align-items-center">
           <Form.Label>Escada?</Form.Label>
           <Form.Check
             type="checkbox"
@@ -80,9 +86,7 @@ const DayRow = ({
             </div>
           </InputGroup>
         </Form.Group>
-        <Form.Group
-          className="col-12 col-md-3 d-flex flex-column align-items-center"
-        >
+        <Form.Group className="col-12 col-md-3 d-flex flex-column align-items-center">
           <Form.Label>Valor a Pagar</Form.Label>
           <Form.Control
             type="text"
@@ -112,7 +116,14 @@ function FreelancerHours(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [days, setDays] = useState<HourEntry[]>([
-    { id: 1, date: null, stairs: false, date_stairs: null, price: "" },
+    {
+      id: 1,
+      daily: false,
+      daily_date: null,
+      stairs: false,
+      date_stairs: null,
+      price: "",
+    },
   ]);
 
   const [autonomos, setAutonomos] = useState<Autonomo[]>([]);
@@ -137,7 +148,14 @@ function FreelancerHours(): JSX.Element {
     const newId = days.length > 0 ? Math.max(...days.map((d) => d.id)) + 1 : 1;
     setDays([
       ...days,
-      { id: newId, date: null, stairs: false, date_stairs: null, price: "" },
+      {
+        id: newId,
+        daily: false,
+        daily_date: null,
+        stairs: false,
+        date_stairs: null,
+        price: "",
+      },
     ]);
   };
 
@@ -168,43 +186,62 @@ function FreelancerHours(): JSX.Element {
       return;
     }
 
-    if (days.some((day) => (day.stairs && !day.date_stairs))) {
-      showError("Por favor, preencha a data");
+    if (
+      days.some(
+        (day) =>
+          (day.daily && !day.daily_date) || (day.stairs && !day.date_stairs)
+      )
+    ) {
+      showError("Se marcar Diária ou Escada, preencha a data correspondente");
       setLoading(false);
       return;
     }
 
     try {
       for (const day of days) {
-        if (!day.date && !day.date_stairs && !day.price) continue;
+        if (day.daily_date || day.date_stairs) {
+          const dadosParaEnviar: DadosHorasAutonomo = {
+            autonomo: selectedAutonomo,
+            diaria: day.daily,
+            data_diaria: day.daily_date
+              ? formatDateToString(day.daily_date)
+              : "",
+            escada: day.stairs,
+            data_escada: day.date_stairs
+              ? formatDateToString(day.date_stairs)
+              : "",
+            pagar: day.price,
+          };
 
-        const dadosParaEnviar: DadosHorasAutonomo = {
-          autonomo: selectedAutonomo,
-          data: day.date ? formatDateToString(day.date) : "",
-          escada: day.stairs,
-          data_escada: day.date_stairs ? formatDateToString(day.date_stairs) : "",
-          valor: day.price,
-        };
+          console.log("Enviando:", dadosParaEnviar);
 
-        console.log("Enviando:", dadosParaEnviar);
+          const response = await fetch(`${API_BASE_URL}/dados-autonomo`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dadosParaEnviar),
+          });
 
-        const response = await fetch(`${API_BASE_URL}/data`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(dadosParaEnviar),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Erro ao cadastrar horas");
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Erro ao cadastrar horas");
+          }
         }
       }
 
       showSuccess("Dias cadastrados com sucesso!");
       setSelectedAutonomo("");
-      setDays([{ id: 1, date: null, stairs: false, date_stairs: null, price: "" }]);
+      setDays([
+        {
+          id: 1,
+          daily: false,
+          daily_date: null,
+          stairs: false,
+          date_stairs: null,
+          price: "",
+        },
+      ]);
     } catch (error) {
       showError("Erro ao cadastrar os dias");
       console.error("Erro:", error);

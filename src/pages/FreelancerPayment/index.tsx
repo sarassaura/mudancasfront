@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState, type JSX } from "react";
-import { Button, Form, InputGroup, Modal, Pagination, Table } from "react-bootstrap";
+import {
+  Button,
+  Form,
+  InputGroup,
+  Modal,
+  Pagination,
+  Table,
+} from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
+import { showError } from "../../components/ToastAlerts/ShowError";
+import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 
 interface Valores {
   _id: string;
@@ -9,10 +18,15 @@ interface Valores {
     _id: string;
     nome: string;
   };
-  diaria: string;
+  diaria: boolean;
+  data_diaria: string;
   escada: boolean;
   data_escada: string;
-  valor: string;
+  pagar: string;
+}
+
+interface EditableValores extends Valores {
+  isEditing?: boolean;
 }
 
 const RED_COLOR = "#Ec3239";
@@ -21,25 +35,27 @@ function FreelancerPayment(): JSX.Element {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
-  
-  const [data, setData] = useState<Valores[]>([]);
+
+  const [data, setData] = useState<EditableValores[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchName, setSearchName] = useState("");
+  const [filterDiaria, setFilterDiaria] = useState<string>("");
+  const [filterEscada, setFilterEscada] = useState<string>("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   const [showModal, setShowModal] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE_URL}/data`)
+    fetch(`${API_BASE_URL}/dados-autonomo`)
       .then((response) => response.json())
       .then((data: Valores[]) => {
-        setData(data);
+        setData(data.map((item) => ({ ...item, isEditing: false })));
         setLoading(false);
       })
       .catch((err) => {
@@ -50,11 +66,34 @@ function FreelancerPayment(): JSX.Element {
 
   const formatDate = (isoDate?: string) => {
     if (!isoDate) return "-";
-    const date = new Date(isoDate);
-    if (isNaN(date.getTime())) return "-";
-    return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
+
+    let date: Date;
+
+    if (isoDate.includes("/")) {
+      return isoDate;
+    }
+
+    if (isoDate.includes("-")) {
+      const dateString = isoDate.includes("T")
+        ? isoDate
+        : `${isoDate}T00:00:00`;
+      date = new Date(dateString);
+    } else {
+      date = new Date(isoDate);
+    }
+
+    if (isNaN(date.getTime())) {
+      console.warn(`Data inválida: ${isoDate}`);
+      return "-";
+    }
+
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
   };
-  
+
   const filteredData = data.filter((item) => {
     const nameMatch = item.autonomo?.nome
       .toLowerCase()
@@ -67,8 +106,37 @@ function FreelancerPayment(): JSX.Element {
     const dateMatch =
       (!start || itemDate >= start) && (!end || itemDate <= end);
 
-    return nameMatch && dateMatch;
+    const diariaMatch =
+      filterDiaria === "" ||
+      (filterDiaria === "sim" && item.diaria) ||
+      (filterDiaria === "nao" && !item.diaria);
+
+    const escadaMatch =
+      filterEscada === "" ||
+      (filterEscada === "sim" && item.escada) ||
+      (filterEscada === "nao" && !item.escada);
+
+    return nameMatch && dateMatch && diariaMatch && escadaMatch;
   });
+
+  const calculateTotals = () => {
+    if (!searchName) return null;
+
+    const totals = {
+      totalDiarias: filteredData.filter((item) => item.diaria).length,
+      totalEscadas: filteredData.filter((item) => item.escada).length,
+      totalPagar: filteredData.reduce((sum, item) => {
+        const valor = item.pagar
+          ? parseFloat(item.pagar.replace(/[^\d,]/g, "").replace(",", ".")) || 0
+          : 0;
+        return sum + valor;
+      }, 0),
+    };
+
+    return totals;
+  };
+
+  const totals = calculateTotals();
 
   const handleExportPDF = () => {
     const element = contentRef.current;
@@ -96,25 +164,118 @@ function FreelancerPayment(): JSX.Element {
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredData.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const handleEditClick = (id: string) => {
+    setData((prev) =>
+      prev.map((item) =>
+        item._id === id ? { ...item, isEditing: true } : item
+      )
+    );
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    const itemToSave = data.find((item) => item._id === id);
+    if (!itemToSave) return;
+
+    try {
+      console.log("Enviando para API:", {
+        diaria: itemToSave.diaria,
+        data_diaria: itemToSave.data_diaria,
+        escada: itemToSave.escada,
+        data_escada: itemToSave.data_escada,
+        pagar: itemToSave.pagar,
+      });
+
+      const response = await fetch(`${API_BASE_URL}/dados-autonomo/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          diaria: itemToSave.diaria,
+          data_diaria: itemToSave.data_diaria,
+          escada: itemToSave.escada,
+          data_escada: itemToSave.data_escada,
+          pagar: itemToSave.pagar,
+        }),
+      });
+
+      console.log("Status da resposta:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erro da API:", errorText);
+        throw new Error(`Erro ${response.status}: ${errorText}`);
+      }
+
+      const updatedData = await response.json();
+      console.log("Dados atualizados:", updatedData);
+
+      setData((prev) =>
+        prev.map((item) =>
+          item._id === id ? { ...updatedData, isEditing: false } : item
+        )
+      );
+      showSuccess("Registro atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro completo:", error);
+      showError("Erro ao atualizar registro: ");
+    }
+  };
+
+  const handleValorChange = (id: string, value: string) => {
+    const raw = value.replace(/\D/g, "");
+
+    const floatValue = parseFloat(raw) / 100;
+    const formatted =
+      raw.length === 0
+        ? ""
+        : floatValue.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          });
+
+    updateField(id, "pagar", formatted);
+  };
+
+  const updateField = (id: string, field: string, value: any) => {
+    setData((prev) =>
+      prev.map((item) => (item._id === id ? { ...item, [field]: value } : item))
+    );
+  };
 
   const handleDeleteClick = (id: string) => {
     setDeleteId(id);
     setShowModal(true);
   };
 
-  const confirmDelete = () => {
-    if (deleteId) {
-      setData((prev) => prev.filter((item) => item._id !== deleteId));
-    }
-    setShowModal(false);
-    setDeleteId(null);
-  };
+  const confirmDelete = async () => {
+    if (!deleteId) return;
 
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/dados-autonomo/${deleteId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao deletar registro");
+      }
+
+      setData((prev) => prev.filter((item) => item._id !== deleteId));
+      showSuccess("Registro deletado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao deletar:", error);
+      showError("Erro ao deletar registro");
+    } finally {
+      setShowModal(false);
+      setDeleteId(null);
+    }
+  };
   if (loading)
     return (
       <div className="text-center p-5">
@@ -178,8 +339,39 @@ function FreelancerPayment(): JSX.Element {
               />
             </InputGroup>
 
+            <InputGroup style={{ maxWidth: "130px" }}>
+              <Form.Select
+                value={filterDiaria}
+                onChange={(e) => setFilterDiaria(e.target.value)}
+              >
+                <option value="">Diária</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+              </Form.Select>
+            </InputGroup>
+
+            <InputGroup style={{ maxWidth: "130px" }}>
+              <Form.Select
+                value={filterEscada}
+                onChange={(e) => setFilterEscada(e.target.value)}
+              >
+                <option value="">Escada</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+              </Form.Select>
+            </InputGroup>
+
             <div className="d-flex align-items-center gap-2">
-              <span className="text-secondary" style={{ display: "flex", alignItems: "center", height: "100%" }}>Semana:</span>
+              <span
+                className="text-secondary"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  height: "100%",
+                }}
+              >
+                Semana:
+              </span>
 
               <InputGroup style={{ maxWidth: "120px" }}>
                 <Form.Control
@@ -194,7 +386,16 @@ function FreelancerPayment(): JSX.Element {
                 />
               </InputGroup>
 
-              <span className="text-secondary" style={{ display: "flex", alignItems: "center", height: "100%" }}>-</span>
+              <span
+                className="text-secondary"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  height: "100%",
+                }}
+              >
+                -
+              </span>
 
               <InputGroup style={{ maxWidth: "120px" }}>
                 <Form.Control
@@ -208,7 +409,7 @@ function FreelancerPayment(): JSX.Element {
                   className="no-calendar-icon"
                 />
               </InputGroup>
-              
+
               <Button
                 variant="outline-secondary"
                 style={{
@@ -223,6 +424,8 @@ function FreelancerPayment(): JSX.Element {
                   setSearchName("");
                   setStartDate("");
                   setEndDate("");
+                  setFilterDiaria("");
+                  setFilterEscada("");
                 }}
               >
                 Limpar
@@ -237,6 +440,7 @@ function FreelancerPayment(): JSX.Element {
               <th>#</th>
               <th>Autônomo</th>
               <th className="text-center">Diária</th>
+              <th className="text-center">Data Diária</th>
               <th className="text-center">Escada</th>
               <th className="text-center">Data Escada</th>
               <th className="text-center">Valor</th>
@@ -252,32 +456,136 @@ function FreelancerPayment(): JSX.Element {
                 </td>
               </tr>
             ) : (
-            currentData.map((item, index) => (
-              <tr key={item._id}>
-                <td className="fw-bold">{startIndex + index + 1}</td>
-                <td>{item.autonomo?.nome}</td>
-                <td className="text-center">{formatDate(item.diaria)}</td>
-                <td className="text-center">{item.escada ? "Sim" : "Não"}</td>
-                <td className="text-center">{formatDate(item.data_escada)}</td>
-                <td className="text-center">{item.valor}</td>
+              currentData.map((item, index) => (
+                <tr key={item._id}>
+                  <td className="fw-bold">{startIndex + index + 1}</td>
+                  <td>{item.autonomo?.nome}</td>
+                  <td className="text-center">
+                    {" "}
+                    {item.isEditing ? (
+                      <Form.Check
+                        type="checkbox"
+                        checked={item.diaria}
+                        onChange={(e) =>
+                          updateField(item._id, "diaria", e.target.checked)
+                        }
+                      />
+                    ) : item.diaria ? (
+                      "Sim"
+                    ) : (
+                      "Não"
+                    )}
+                  </td>
+                  <td className="text-center">
+                    {item.isEditing ? (
+                      <Form.Control
+                        type="date"
+                        value={
+                          item.data_diaria ? item.data_diaria.split("T")[0] : ""
+                        }
+                        onChange={(e) =>
+                          updateField(item._id, "data_diaria", e.target.value)
+                        }
+                      />
+                    ) : (
+                      formatDate(item.data_diaria)
+                    )}
+                  </td>
+                  <td className="text-center">
+                    {" "}
+                    {item.isEditing ? (
+                      <Form.Check
+                        type="checkbox"
+                        checked={item.escada}
+                        onChange={(e) =>
+                          updateField(item._id, "escada", e.target.checked)
+                        }
+                      />
+                    ) : item.escada ? (
+                      "Sim"
+                    ) : (
+                      "Não"
+                    )}
+                  </td>
+                  <td className="text-center">
+                    {item.isEditing ? (
+                      <Form.Control
+                        type="date"
+                        value={
+                          item.data_escada ? item.data_escada.split("T")[0] : ""
+                        }
+                        onChange={(e) =>
+                          updateField(item._id, "data_escada", e.target.value)
+                        }
+                      />
+                    ) : (
+                      formatDate(item.data_escada)
+                    )}
+                  </td>
+                  <td className="text-center">
+                    {item.isEditing ? (
+                      <Form.Control
+                        type="text"
+                        value={item.pagar}
+                        onChange={(e) =>
+                          handleValorChange(item._id, e.target.value)
+                        }
+                        placeholder="R$ 0,00"
+                      />
+                    ) : (
+                      item.pagar
+                    )}
+                  </td>
+                  <td className="text-center">
+                    {item.isEditing ? (
+                      <div className="d-flex gap-2 justify-content-center">
+                        <i
+                          className="bi bi-check-circle text-success"
+                          style={{ cursor: "pointer" }}
+                          title="Salvar"
+                          onClick={() => handleSaveEdit(item._id)}
+                        ></i>
+                      </div>
+                    ) : (
+                      <i
+                        className="bi bi-pencil-square text-primary"
+                        style={{ cursor: "pointer" }}
+                        title="Editar"
+                        onClick={() => handleEditClick(item._id)}
+                      ></i>
+                    )}
+                  </td>
+                  <td className="text-center">
+                    <i
+                      className="bi bi-trash3 text-danger"
+                      style={{ cursor: "pointer" }}
+                      title="Excluir"
+                      onClick={() => handleDeleteClick(item._id)}
+                    ></i>
+                  </td>
+                </tr>
+              ))
+            )}
+
+            {totals && (
+              <tr style={{ backgroundColor: "#f8f9fa", fontWeight: "bold" }}>
+                <td>Total</td>
+                <td>-</td>
+                <td className="text-center">{totals.totalDiarias}</td>
+                <td className="text-center">-</td>
+                <td className="text-center">{totals.totalEscadas}</td>
+                <td className="text-center">-</td>
                 <td className="text-center">
-                  <i
-                    className="bi bi-pencil-square text-primary"
-                    style={{ cursor: "pointer" }}
-                    title="Editar"
-                  ></i>
+                  {totals.totalPagar.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
                 </td>
-                <td className="text-center">
-                  <i
-                    className="bi bi-trash3 text-danger"
-                    style={{ cursor: "pointer" }}
-                    title="Excluir"
-                    onClick={() => handleDeleteClick(item._id)}
-                  ></i>
+                <td colSpan={2} className="text-center">
+                  -
                 </td>
               </tr>
-            ))
-          )}
+            )}
           </tbody>
         </Table>
 

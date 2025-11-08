@@ -7,6 +7,7 @@ import { showError } from "../../components/ToastAlerts/ShowError";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import type {
   DadosPedido,
+  Equipe,
   Veiculo,
   Funcionario,
   Autonomo,
@@ -30,12 +31,14 @@ function Requests(): JSX.Element {
     data_embalagem: "",
     data_retirada: "",
     data_entrega: "",
+    equipe: "",
     funcionario: [],
     autonomo: [],
     veiculo: "",
     descricao: "",
   });
 
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [autonomos, setAutonomos] = useState<Autonomo[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
@@ -43,15 +46,20 @@ function Requests(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
 
-  const funcMap: CollaboratorMap = useMemo(() => 
-    funcionarios.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.nome }), {}), 
-    [funcionarios] 
-  ); 
-  const autoMap: CollaboratorMap = useMemo(() => 
-    autonomos.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.nome }), {}), 
-    [autonomos] 
+  const funcMap: CollaboratorMap = useMemo(
+    () =>
+      funcionarios.reduce(
+        (acc, curr) => ({ ...acc, [curr._id]: curr.nome }),
+        {}
+      ),
+    [funcionarios]
   );
-  
+  const autoMap: CollaboratorMap = useMemo(
+    () =>
+      autonomos.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.nome }), {}),
+    [autonomos]
+  );
+
   useEffect(() => {
     const fetchPedidoData = async () => {
       if (isEditMode && editId) {
@@ -70,12 +78,39 @@ function Requests(): JSX.Element {
             data_embalagem: pedidoData.data_embalagem || "",
             data_retirada: pedidoData.data_retirada || "",
             data_entrega: pedidoData.data_entrega || "",
-            funcionario:
-              pedidoData.funcionario?._id || pedidoData.funcionario || "",
-            autonomo: pedidoData.autonomo?._id || pedidoData.autonomo || "",
+            equipe: pedidoData.equipe?._id || pedidoData.equipe || "",
+            funcionario: Array.isArray(pedidoData.funcionario)
+              ? pedidoData.funcionario.map((f: any) => f._id || f)
+              : pedidoData.funcionario
+              ? [pedidoData.funcionario._id || pedidoData.funcionario]
+              : [],
+            autonomo: Array.isArray(pedidoData.autonomo)
+              ? pedidoData.autonomo.map((a: any) => a._id || a)
+              : pedidoData.autonomo
+              ? [pedidoData.autonomo._id || pedidoData.autonomo]
+              : [],
             veiculo: pedidoData.veiculo?._id || pedidoData.veiculo || "",
             descricao: pedidoData.descricao || "",
           });
+
+          if (pedidoData.data_embalagem) {
+            const [day, month, year] = pedidoData.data_embalagem.split("/");
+            setPackingDate(
+              new Date(Number(year), Number(month) - 1, Number(day))
+            );
+          }
+          if (pedidoData.data_retirada) {
+            const [day, month, year] = pedidoData.data_retirada.split("/");
+            setTakeoutDate(
+              new Date(Number(year), Number(month) - 1, Number(day))
+            );
+          }
+          if (pedidoData.data_entrega) {
+            const [day, month, year] = pedidoData.data_entrega.split("/");
+            setDeliveryDate(
+              new Date(Number(year), Number(month) - 1, Number(day))
+            );
+          }
         } catch (error) {
           showError("Erro ao carregar dados para edição");
           console.error("Erro:", error);
@@ -92,19 +127,23 @@ function Requests(): JSX.Element {
     const fetchData = async () => {
       try {
         const [
+          equipesResponse,
           funcionariosResponse,
           autonomosResponse,
           veiculosResponse,
         ] = await Promise.all([
+          fetch(`${API_BASE_URL}/equipes`),
           fetch(`${API_BASE_URL}/funcionarios`),
           fetch(`${API_BASE_URL}/autonomos`),
           fetch(`${API_BASE_URL}/veiculos`),
         ]);
 
+        const equipesData = await equipesResponse.json();
         const funcionariosData = await funcionariosResponse.json();
         const autonomosData = await autonomosResponse.json();
         const veiculosData = await veiculosResponse.json();
 
+        setEquipes(equipesData);
         setFuncionarios(funcionariosData);
         setAutonomos(autonomosData);
         setVeiculos(veiculosData);
@@ -127,28 +166,28 @@ function Requests(): JSX.Element {
     }));
   };
 
-  const handleInputSelection = ( 
-    e: React.ChangeEvent<HTMLSelectElement>, 
-    field: "funcionario" | "autonomo" 
-  ) => { 
-    const selectedId = e.target.value; 
-    if (selectedId && !formData[field].includes(selectedId)) { 
-      setFormData((prev) => ({ 
-        ...prev, 
-        [field]: [...prev[field], selectedId], 
-      })); 
-    } 
-    e.target.value = ""; 
-  }; 
-    
-  const handleRemoveCollaborator = ( 
-    idToRemove: string, 
-    field: "funcionario" | "autonomo" 
-  ) => { 
-    setFormData((prev) => ({ 
-      ...prev, 
-      [field]: prev[field].filter((id) => id !== idToRemove), 
-    })); 
+  const handleInputSelection = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+    field: "funcionario" | "autonomo"
+  ) => {
+    const selectedId = e.target.value;
+    if (selectedId && !formData[field].includes(selectedId)) {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: [...prev[field], selectedId],
+      }));
+    }
+    e.target.value = "";
+  };
+
+  const handleRemoveCollaborator = (
+    idToRemove: string,
+    field: "funcionario" | "autonomo"
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((id) => id !== idToRemove),
+    }));
   };
 
   const formatDateToString = (date: Date): string => {
@@ -234,10 +273,14 @@ function Requests(): JSX.Element {
             : "Pedido cadastrado com sucesso!"
         );
 
-        if (location.state?.fromDeliveryRequests) {
-          navigate("/pedidos-mudanca");
+        if (isEditMode) {
+          if (location.state?.fromDeliveryRequests) {
+            navigate("/pedidos-mudanca");
+          } else if (location.state?.fromManage) {
+            navigate("/gerenciar");
+          }
         } else {
-          navigate("/gerenciar");
+          navigate("/cadastrar");
         }
       } else {
         const errorData = await response.json();
@@ -266,40 +309,40 @@ function Requests(): JSX.Element {
     }
   };
 
-  const CollaboratorChips = ({ 
-    ids, 
-    map, 
-    field 
-  }: { 
-    ids: string[], 
-    map: CollaboratorMap, 
-    field: "funcionario" | "autonomo" 
-  }) => ( 
-    <div className="d-flex flex-wrap gap-2 mt-2"> 
-      {ids.map((id) => ( 
-        <Badge 
-          key={id} 
-          className="d-flex align-items-center p-2 rounded-pill bg-white text-secondary border border-secondary" 
-          style={{ 
-            cursor: "pointer", 
-            backgroundColor: "white !important", 
-            fontFamily: 'Segoe UI, sans-serif', 
-            fontWeight: 'normal', 
-            fontSize: '14px', 
-          }} 
-          onClick={() => handleRemoveCollaborator(id, field)} 
-        > 
-          {map[id] || 'Nome Desconhecido'} 
-          <i 
-            className="bi bi-x-circle-fill ms-2" 
-            style={{ 
-              fontSize: '0.9em', 
-              color: "currentColor" 
-            }} 
-          ></i> 
-        </Badge> 
-      ))} 
-    </div> 
+  const CollaboratorChips = ({
+    ids,
+    map,
+    field,
+  }: {
+    ids: string[];
+    map: CollaboratorMap;
+    field: "funcionario" | "autonomo";
+  }) => (
+    <div className="d-flex flex-wrap gap-2 mt-2">
+      {ids.map((id) => (
+        <Badge
+          key={id}
+          className="d-flex align-items-center p-2 rounded-pill bg-white text-secondary border border-secondary"
+          style={{
+            cursor: "pointer",
+            backgroundColor: "white !important",
+            fontFamily: "Segoe UI, sans-serif",
+            fontWeight: "normal",
+            fontSize: "14px",
+          }}
+          onClick={() => handleRemoveCollaborator(id, field)}
+        >
+          {map[id] || "Nome Desconhecido"}
+          <i
+            className="bi bi-x-circle-fill ms-2"
+            style={{
+              fontSize: "0.9em",
+              color: "currentColor",
+            }}
+          ></i>
+        </Badge>
+      ))}
+    </div>
   );
 
   if (fetching) {
@@ -390,6 +433,28 @@ function Requests(): JSX.Element {
           </Form.Group>
         </div>
 
+        <Form.Group className="mb-3" controlId="formGridTeam">
+          <Form.Label>Equipe</Form.Label>
+          <InputGroup>
+            <InputGroup.Text>
+              <i className="bi bi-people-fill"></i>
+            </InputGroup.Text>
+            <Form.Select
+              name="equipe"
+              value={formData.equipe}
+              onChange={handleInputChange}
+              disabled={loading || fetching}
+            >
+              <option value="">Selecione a Equipe</option>
+              {equipes.map((equipe) => (
+                <option key={equipe._id} value={equipe._id}>
+                  {equipe.nome}
+                </option>
+              ))}
+            </Form.Select>
+          </InputGroup>
+        </Form.Group>
+
         <Form.Group className="mb-3" controlId="formGridFuncionarios">
           <Form.Label>Funcionários</Form.Label>
           <InputGroup>
@@ -406,18 +471,18 @@ function Requests(): JSX.Element {
                 Selecione o(s) Funcionário(s)
               </option>
               {funcionarios
-                .filter(f => !formData.funcionario.includes(f._id))
+                .filter((f) => !formData.funcionario.includes(f._id))
                 .map((funcionario) => (
-                <option key={funcionario._id} value={funcionario._id}>
-                  {funcionario.nome}
-                </option>
-              ))}
+                  <option key={funcionario._id} value={funcionario._id}>
+                    {funcionario.nome}
+                  </option>
+                ))}
             </Form.Select>
           </InputGroup>
-          <CollaboratorChips 
-            ids={formData.funcionario} 
-            map={funcMap} 
-            field="funcionario" 
+          <CollaboratorChips
+            ids={formData.funcionario}
+            map={funcMap}
+            field="funcionario"
           />
         </Form.Group>
         <Form.Group className="mb-3" controlId="formGridAutonomos">
@@ -436,18 +501,18 @@ function Requests(): JSX.Element {
                 Selecione o(s) Autônomo(s)
               </option>
               {autonomos
-                .filter(a => !formData.autonomo.includes(a._id))
+                .filter((a) => !formData.autonomo.includes(a._id))
                 .map((autonomo) => (
-                <option key={autonomo._id} value={autonomo._id}>
-                  {autonomo.nome}
-                </option>
-              ))}
+                  <option key={autonomo._id} value={autonomo._id}>
+                    {autonomo.nome}
+                  </option>
+                ))}
             </Form.Select>
           </InputGroup>
-          <CollaboratorChips 
-            ids={formData.autonomo} 
-            map={autoMap} 
-            field="autonomo" 
+          <CollaboratorChips
+            ids={formData.autonomo}
+            map={autoMap}
+            field="autonomo"
           />
         </Form.Group>
         <Form.Group className="mb-3" controlId="formGridVehicle">

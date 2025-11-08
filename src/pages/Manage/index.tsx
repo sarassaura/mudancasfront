@@ -267,7 +267,12 @@ function Manage(): JSX.Element {
       });
 
       if (response.ok) {
-        showSuccess("Pedido excluído permanentemente com sucesso!");
+        const section = sectionsData.find((s) => s.endpoint === endpoint);
+        if (section?.isPedido) {
+          showSuccess("Pedido excluído permanentemente com sucesso!");
+        } else {
+          showSuccess("Item excluído permanentemente com sucesso!");
+        }
 
         setSectionsData((prev) =>
           prev.map((section) =>
@@ -449,25 +454,6 @@ function Manage(): JSX.Element {
                             >
                               {loading === row.id ? "..." : "Excluir"}
                             </Button>
-
-                            {section.isPedido && (
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                disabled={loading === row.id}
-                                onClick={() =>
-                                  handlePermanentDelete(
-                                    row,
-                                    section.title,
-                                    section.endpoint
-                                  )
-                                }
-                              >
-                                {loading === row.id
-                                  ? "..."
-                                  : "Excluir Permanentemente"}
-                              </Button>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -538,6 +524,22 @@ function Manage(): JSX.Element {
                               >
                                 {loading === row.id ? "..." : "Reativar"}
                               </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                disabled={loading === row.id}
+                                onClick={() =>
+                                  handlePermanentDelete(
+                                    row,
+                                    section.title,
+                                    section.endpoint
+                                  )
+                                }
+                              >
+                                {loading === row.id
+                                  ? "..."
+                                  : "Excluir Permanentemente"}
+                              </Button>
                             </div>
                           </div>
                         </td>
@@ -555,7 +557,10 @@ function Manage(): JSX.Element {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Você tem certeza que deseja excluir *{itemToDelete?.value}*?</p>
+          <p>
+            Você tem certeza que deseja excluir{" "}
+            <strong>{itemToDelete?.value}</strong>?
+          </p>
 
           <p className="text-muted">
             {itemToDelete?.sectionTitle === "Pedidos"
@@ -588,12 +593,16 @@ function Manage(): JSX.Element {
             <strong>Atenção!</strong> Esta ação não pode ser desfeita.
           </div>
           <p>
-            Você tem certeza que deseja excluir permanentemente o pedido:
+            Você tem certeza que deseja excluir permanentemente{" "}
+            {itemToDelete?.sectionTitle === "Pedidos" ? "o pedido" : "o item"}:
             <strong> {itemToDelete?.value}</strong>?
           </p>
           <p className="text-muted">
-            Todos os dados deste pedido serão permanentemente removidos do banco
-            de dados.
+            Todos os dados{" "}
+            {itemToDelete?.sectionTitle === "Pedidos"
+              ? "deste pedido"
+              : "deste item"}{" "}
+            serão permanentemente removidos do banco de dados.
           </p>
         </Modal.Body>
         <Modal.Footer>
@@ -605,7 +614,7 @@ function Manage(): JSX.Element {
             onClick={confirmPermanentDeletion}
             disabled={false}
           >
-            "Sim, Excluir Permanentemente"
+            Sim, Excluir Permanentemente
           </Button>
         </Modal.Footer>
       </Modal>

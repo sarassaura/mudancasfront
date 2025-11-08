@@ -17,8 +17,10 @@ function Register(): JSX.Element {
         </div>
         <div className="col-6 d-flex flex-column gap-3 px-2">
           <ButtonLink url="/pedidos">Pedidos</ButtonLink>
-          <ButtonLink url="/horas-funcionarios">Diárias Funcionários</ButtonLink>
-          <ButtonLink url="/horas-autonomos">Diárias Autônomos</ButtonLink>
+          <ButtonLink url="/horas-funcionarios">
+            Pernoites de Funcionários
+          </ButtonLink>
+          <ButtonLink url="/horas-autonomos">Diárias de Autônomos</ButtonLink>
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { showSuccess } from "../../components/ToastAlerts/ShowSuccess";
 import { showError } from "../../components/ToastAlerts/ShowError";
-import type { Veiculo, Funcionario, Autonomo } from "../../types";
+import type { Equipe, Veiculo, Funcionario, Autonomo } from "../../types";
 
 interface Pedidos {
   _id: string;
@@ -13,6 +13,7 @@ interface Pedidos {
   data_embalagem?: string;
   data_entrega: string;
   data_retirada: string;
+  equipe?: Equipe;
   funcionario: Funcionario[];
   autonomo: Autonomo[];
   veiculo: Veiculo;
@@ -23,6 +24,7 @@ interface Pedidos {
 interface ConsolidatedCardItem {
   _id: string;
   titulo: string;
+  equipe?: Equipe;
   funcionarios: Funcionario[];
   autonomos: Autonomo[];
   veiculo: Veiculo;
@@ -85,8 +87,13 @@ const expandPedidosToConsolidatedCardItems = (
         consolidatedMap.set(key, {
           _id: pedido._id,
           titulo: pedido.titulo,
-          funcionarios: Array.isArray(pedido.funcionario) ? pedido.funcionario : [pedido.funcionario],
-          autonomos: Array.isArray(pedido.autonomo) ? pedido.autonomo : [pedido.autonomo],
+          equipe: pedido.equipe,
+          funcionarios: Array.isArray(pedido.funcionario)
+            ? pedido.funcionario
+            : [pedido.funcionario],
+          autonomos: Array.isArray(pedido.autonomo)
+            ? pedido.autonomo
+            : [pedido.autonomo],
           veiculo: pedido.veiculo,
           descricao: pedido.descricao,
           data_foco: event.date,
@@ -238,8 +245,12 @@ function DeliveryRequests(): JSX.Element {
   }, [API_BASE_URL]);
 
   useEffect(() => {
-    const allConsolidatedCardItems =
-      expandPedidosToConsolidatedCardItems(rawData);
+    const activePedidos = rawData.filter(
+      (pedido) => pedido.status !== "inativado"
+    );
+
+    const allConsolidatedCardItems: ConsolidatedCardItem[] =
+      expandPedidosToConsolidatedCardItems(activePedidos);
 
     const newFiltered = filterCardItems(
       allConsolidatedCardItems,
@@ -470,6 +481,7 @@ function DeliveryRequests(): JSX.Element {
                 title={`[${cardItem?.tipos_evento?.join("/") || "N/A"}] ${
                   cardItem?.titulo || "Pedido Sem Título"
                 }`}
+                team={cardItem?.equipe?.nome || "Equipe não definida"}
                 data_embalagem={
                   cardItem?.tipos_evento?.includes("Embalagem")
                     ? cardItem.data_foco
@@ -532,15 +544,22 @@ function DeliveryRequests(): JSX.Element {
                     {selectedPedido.data_retirada}
                   </p>
                   <p>
-                    <strong>Data de Entrega:</strong> {selectedPedido.data_entrega}
+                    <strong>Data de Entrega:</strong>{" "}
+                    {selectedPedido.data_entrega}
                   </p>
                 </div>
               </div>
               <p>
-                <strong>Funcionários:</strong> {selectedPedido.funcionario?.map(f => f.nome).join(", ")}
+                <strong>Equipe:</strong> {selectedPedido.equipe?.nome}
+              </p>
+
+              <p>
+                <strong>Funcionários:</strong>{" "}
+                {selectedPedido.funcionario?.map((f) => f.nome).join(", ")}
               </p>
               <p>
-                <strong>Autônomos:</strong> {selectedPedido.autonomo?.map(f => f.nome).join(", ")}
+                <strong>Autônomos:</strong>{" "}
+                {selectedPedido.autonomo?.map((f) => f.nome).join(", ")}
               </p>
               <p>
                 <strong>Veículo:</strong> {selectedPedido.veiculo?.nome}

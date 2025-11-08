@@ -95,7 +95,11 @@ function Teams(): JSX.Element {
             : "Equipe cadastrada com sucesso!"
         );
 
-        navigate("/gerenciar");
+        if (isEditMode) {
+          navigate("/gerenciar");
+        } else {
+          navigate("/cadastrar");
+        }
       } else {
         const errorData = await response.json();
         showError(
